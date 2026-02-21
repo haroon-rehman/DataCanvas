@@ -1,0 +1,601 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'>
+    <link href="https://fonts.cdnfonts.com/css/ds-digital" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/ds-digital" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src='https://benpickles.github.io/peity/jquery.peity.js'></script>
+
+    <style>
+        html,
+        body {
+            /* Centers both horizontall & vertically*/
+            /* height: 100%; */
+            padding: 0;
+            margin: 0;
+            background-color: rgba(37, 37, 38, 1);
+        }
+
+        html {
+            display: table;
+            margin: auto;
+        }
+
+        body {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            background-color: rgba(45, 45, 48, 1);
+            text-align: center;
+            border-color: rgba(37, 37, 38, 1);
+            border-width: 0pt;
+        }
+
+        .card:hover {
+            box-shadow: 0 5px 10px 0 rgba(255, 255, 255, 0.2);
+            /* box-shadow: 0 5px 10px 0 rgba(20,55,193,1); */
+            color: #ffffff;
+            transition: 0.3s;
+        }
+
+        .cardback {
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            background-color: rgba(45, 45, 48, 1);
+            text-align: center;
+            border-color: rgba(37, 37, 38, 1);
+            border-width: 0pt;
+            overflow: hidden;
+        }
+
+        .cardback:hover {
+            box-shadow: 0 5px 10px 0 rgba(20, 55, 193, 1);
+            color: #ffffff;
+            transition: 0.3s;
+        }
+
+        /* Flip card styles */
+        .flip-card {
+            background-color: transparent;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            perspective: 1000px;
+            /* Remove this if you don't want the 3D effect */
+        }
+
+        .flip-card-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        /* .flip-card:hover .flip-card-inner {
+    transform: rotateY(180deg);
+} */
+
+        .do-flip {
+            -o-transform: rotateY(-180deg);
+            -webkit-transform: rotateY(-180deg);
+            -ms-transform: rotateY(-180deg);
+            transform: rotateY(-180deg);
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 5px;
+            -webkit-backface-visibility: hidden;
+            /* Safari */
+            backface-visibility: hidden;
+        }
+
+        .flip-card-front {
+            background-color: rgba(20, 55, 193, 1);
+            color: #000;
+        }
+
+        .flip-card-back {
+            background-color: white;
+            color: #000;
+            transform: rotateY(180deg);
+        }
+
+        .icon-stacked {
+            color: white;
+            margin-top: 5px;
+            font-size: 18pt;
+        }
+
+        .icon {
+            position: relative;
+            padding-top: 2px;
+            vertical-align: middle;
+            text-align: center;
+            color: #fff;
+        }
+
+        .icon-large {
+            color: white;
+            margin-top: 5px;
+            font-size: 50pt;
+        }
+
+        .icon-value {
+            color: #fff;
+            font-size: 25pt;
+            margin-top: -8px;
+        }
+
+        .icon-label {
+            font-family: 'Roboto';
+            color: #fff;
+            font-size: 10pt;
+            margin-top: -15px;
+        }
+
+        td {
+            padding: 3px;
+            width: 120px;
+            height: 120px;
+            text-align: center;
+        }
+
+        .icon span {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="carouselDashboard" class="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <table>
+                    <tr>
+                        <td>
+                            <div class="card" data-bs-slide-to="1" data-bs-target="#carouselDashboard" type="button">
+                                <i class="fa fa-bell fa-3x icon" aria-hidden="true"></i>
+                                <p class="icon-value" id="securityIssuesCount1">00</p>
+                                <p class="icon-label">SECURITY INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card text-center" data-bs-slide-to="2" data-bs-target="#carouselDashboard"
+                                type="button">
+                                <i class="fa fa-wrench fa-3x icon"></i>
+                                <p class="icon-value" id="maintIssuesCount1">00</p>
+                                <p class="icon-label">MAINTENANCE ISSUES</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flip-card">
+                                <div id="cardfront1" class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <img src="./IMG/evbg_blue.png" class="card-img-top" alt="Front Image"
+                                            style="width: 98%; height: 98%; margin-top: 1px;">
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <img src="./IMG/evbg_white.png" class="card-img-top" alt="Front Image"
+                                            style="width: 98%; height: 98%; margin-top: 1px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="card">
+                                <i class="fa fa-warning fa-3x icon" aria-hidden="true" style="color: orange;"></i>
+                                <p class="icon-value" id="totalActiveIncidents">00</p>
+                                <p class="icon-label">TOTAL ACTIVE INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color:limegreen;"></i>
+                                <p class="icon-value" id="totalInProgressIssues">00</p>
+                                <p class="icon-label">INPROGRESS INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <div class="card">
+                                    <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color: maroon;"></i>
+                                    <p class="icon-value" id="totalInUnresolvedIssues">00</p>
+                                    <p class="icon-label">UNRESOLVED INCIDENTS</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <div class="card">
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <div class="card" style="box-shadow: none;">
+                                                <i class="fa fa-shield fa-4x icon" aria-hidden="true"></i>
+                                                <br>
+                                                <p class="icon-label">CCTV HEALTH STATUS</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <ul class="list-group card" style="box-shadow: none;">
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    TOTAL&nbsp;
+                                                    <span class="badge bg-primary rounded-pill text-end">15</span>
+                                                </li>
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    ONLINE&nbsp;
+                                                    <span class="badge bg-success rounded-pill text-end">15</span>
+                                                </li>
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    OFFLINE&nbsp;
+                                                    <span class="badge bg-danger rounded-pill text-end">00</span>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <div class="card">
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <div class="card" style="box-shadow: none;">
+                                                <i class="fa fa-shield fa-4x icon" aria-hidden="true"></i>
+                                                <br>
+                                                <p class="icon-label">ACS HEALTH STATUS</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <ul class="list-group card" style="box-shadow: none;">
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    TOTAL&nbsp;
+                                                    <span class="badge bg-primary rounded-pill text-end">11</span>
+                                                </li>
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    ONLINE&nbsp;
+                                                    <span class="badge bg-success rounded-pill text-end">11</span>
+                                                </li>
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    OFFLINE&nbsp;
+                                                    <span class="badge bg-danger rounded-pill text-end">00</span>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <div class="card">
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <div class="card" style="box-shadow: none;">
+                                                <i class="fa fa-shield fa-4x icon" aria-hidden="true"></i>
+                                                <br>
+                                                <p class="icon-label">BMS HEALTH STATUS</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <ul class="list-group card" style="box-shadow: none;">
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    TOTAL&nbsp;
+                                                    <span class="badge bg-primary rounded-pill text-end">06</span>
+                                                </li>
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    ONLINE&nbsp;
+                                                    <span class="badge bg-success rounded-pill text-end">06</span>
+                                                </li>
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 text-white text-start">
+                                                    OFFLINE&nbsp;
+                                                    <span class="badge bg-danger rounded-pill text-end">00</span>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="carousel-item">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class="card">
+                                <i class="fa fa-bell fa-3x icon" aria-hidden="true"></i>
+                                <p class="icon-value" id="securityIssuesCount2">00</p>
+                                <p class="icon-label">SECURITY INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flip-card">
+                                <div id="cardfront2" class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <img src="./IMG/evbg_blue.png" class="card-img-top" alt="Front Image"
+                                            style="width: 98%; height: 98%; margin-top: 1px;">
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <img src="./IMG/evbg_white.png" class="card-img-top" alt="Front Image"
+                                            style="width: 98%; height: 98%; margin-top: 1px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="card">
+                                <div class="icon">
+                                    <i class="fa fa-video-camera fa-3x"></i>
+                                    <span class="badge"><i class="fa fa-warning" style="color: orange;"></i>
+                                    </span>
+                                </div>
+                                <p class="icon-value" id="totalCctvIssuesCount">00</p>
+                                <p class="icon-label">CCTV ACTIVE INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color:limegreen;"></i>
+                                <p class="icon-value" id="inProgressCctvIssuesCount">00</p>
+                                <p class="icon-label">INPROGRESS INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <div class="card">
+                                    <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color: maroon;"></i>
+                                    <p class="icon-value" id="unresolvedCctvIssuesCount">00</p>
+                                    <p class="icon-label">UNRESOLVED INCIDENTS</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="card">
+                                <div class="icon">
+                                    <i class="fa fa-lock fa-3x"></i>
+                                    <span class="badge"><i class="fa fa-warning" style="color: orange;"></i>
+                                    </span>
+                                </div>
+                                <p class="icon-value" id="totalAcsIssuesCount">00</p>
+                                <p class="icon-label">ACS ACTIVE INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color:limegreen;"></i>
+                                <p class="icon-value" id="inProgressAcsIssuesCount">00</p>
+                                <p class="icon-label">INPROGRESS INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <div class="card">
+                                    <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color: maroon;"></i>
+                                    <p class="icon-value" id="unresolvedAcsIssuesCount">00</p>
+                                    <p class="icon-label">UNRESOLVED INCIDENTS</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="card">
+                                <div class="icon">
+                                    <i class="fa fa-tasks fa-3x"></i>
+                                    <span class="badge"><i class="fa fa-warning" style="color: orange;"></i>
+                                    </span>
+                                </div>
+                                <p class="icon-value" id="totalBmsIssuesCount">00</p>
+                                <p class="icon-label">BMS ACTIVE INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color:limegreen;"></i>
+                                <p class="icon-value" id="inProgressBmsIssuesCount">00</p>
+                                <p class="icon-label">INPROGRESS INCIDENTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <div class="card">
+                                    <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color: maroon;"></i>
+                                    <p class="icon-value" id="unresolvedBmsIssuesCount">00</p>
+                                    <p class="icon-label">UNRESOLVED INCIDENTS</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="cardback" data-bs-slide-to="0" data-bs-target="#carouselDashboard" type="button">
+                                <div class="icon">
+                                    <i class="fa fa-arrow-left fa-3x"></i>
+                                </div>
+                                <p class="icon-value">&nbsp;</p>
+                                <p class="icon-label">GO BACK</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="carousel-item">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class="card text-center">
+                                <i class="fa fa-wrench fa-3x icon"></i>
+                                <p class="icon-value" id="maintIssuesCount2">00</p>
+                                <p class="icon-label">MAINTENANCE ISSUES</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flip-card">
+                                <div id="cardfront3" class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <img src="./IMG/evbg_blue.png" class="card-img-top" alt="Front Image"
+                                            style="width: 98%; height: 98%; margin-top: 1px;">
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <img src="./IMG/evbg_white.png" class="card-img-top" alt="Front Image"
+                                            style="width: 98%; height: 98%; margin-top: 1px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="card">
+                                <div class="icon">
+                                    <i class="fa fa-wrench fa-3x"></i>
+                                    <span class="badge"><i class="fa fa-warning" style="color: orange;"></i>
+                                    </span>
+                                </div>
+                                <p class="icon-value" id="totalMaintIssuesCount">00</p>
+                                <p class="icon-label">MAINT. ACTIVE REQUESTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color:limegreen;"></i>
+                                <p class="icon-value" id="inProgressMaintIssuesCount">00</p>
+                                <p class="icon-label">INPROGRESS REQUESTS</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card">
+                                <div class="card">
+                                    <i class="fa fa-circle fa-3x icon" aria-hidden="true" style="color: maroon;"></i>
+                                    <p class="icon-value" id="unresolvedMaintIssuesCount">00</p>
+                                    <p class="icon-label">UNRESOLVED REQUESTS</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="cardback" data-bs-slide-to="0" data-bs-target="#carouselDashboard" type="button">
+                                <div class="icon">
+                                    <i class="fa fa-arrow-left fa-3x"></i>
+                                </div>
+                                <p class="icon-value">&nbsp;</p>
+                                <p class="icon-label">GO BACK</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function getRandomInt(min, max) {
+            const minCeiled = Math.ceil(min);
+            const maxFloored = Math.floor(max);
+            return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled); // The maximum is exclusive and the minimum is inclusive
+        }
+
+        $(document).ready(function () {
+            //init graph
+            $("#barGraphTotal").peity("bar");
+            $("#barGraphIn").peity("bar");
+            $("#barGraphOut").peity("bar");
+
+            //Set flip card timer
+            setInterval(myTimer, 5000);
+            function myTimer() {
+                document.getElementById('cardfront1').classList.toggle('do-flip');
+                document.getElementById('cardfront2').classList.toggle('do-flip');
+                document.getElementById('cardfront3').classList.toggle('do-flip');
+            };
+
+            //get traffic counts
+            var securityIssuesCount = getRandomInt(3, 7);
+            var maintIssuesCount = getRandomInt(2, 5);
+            var totalActiveIncidents = securityIssuesCount + maintIssuesCount;
+            var totalInProgressIssues = 2;
+            var totalInUnresolvedIssues = totalActiveIncidents - totalInProgressIssues;
+
+             $("#securityIssuesCount1").text(securityIssuesCount);
+             $("#securityIssuesCount2").text(securityIssuesCount);
+             $("#maintIssuesCount1").text(maintIssuesCount);
+             $("#maintIssuesCount2").text(maintIssuesCount);
+             $("#totalActiveIncidents").text(totalActiveIncidents);
+             $("#totalInProgressIssues").text(totalInProgressIssues);
+             $("#totalInUnresolvedIssues").text(totalInUnresolvedIssues);           
+
+             $("#totalCctvIssuesCount").text(1);
+             $("#inProgressCctvIssuesCount").text(1);
+             $("#unresolvedCctvIssuesCount").text(0);
+
+             $("#totalAcsIssuesCount").text(securityIssuesCount-2);
+             $("#inProgressAcsIssuesCount").text(0);
+             $("#unresolvedAcsIssuesCount").text(securityIssuesCount-2);
+
+             $("#totalBmsIssuesCount").text(1);
+             $("#inProgressBmsIssuesCount").text(0);
+             $("#unresolvedBmsIssuesCount").text(1);
+
+             $("#totalMaintIssuesCount").text(maintIssuesCount);
+             $("#inProgressMaintIssuesCount").text(maintIssuesCount-1);
+             $("#unresolvedMaintIssuesCount").text(1);
+
+            // Show width × height in tooltip for each card
+            function updateCardSizeTooltip(el) {
+                var w = el.offsetWidth;
+                var h = el.offsetHeight;
+                el.setAttribute('title', w + ' × ' + h + ' px');
+            }
+            $(document).on('mouseenter', '.card, .cardback', function () {
+                updateCardSizeTooltip(this);
+            });
+            // Set initial tooltips for visible cards
+            $('.card, .cardback').each(function () {
+                updateCardSizeTooltip(this);
+            });
+        });
+    </script>
+</body>
+
+</html>

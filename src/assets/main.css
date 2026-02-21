@@ -1,0 +1,27 @@
+/* Bootstrap is imported in main.js. No custom styles. */
+
+/* Less space between widget top and icon in grid dashboard */
+.grid-stack .card .card-body {
+  padding-top: 0.5rem;
+}
+
+/* Let DashboardGridWidget fill the cell and use content alignment */
+.grid-stack-item-content .dashboard-grid-widget-root {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.grid-stack-item-content .dashboard-grid-widget-content-wrapper {
+  flex: 1;
+  min-height: 0;
+}
+/* Nested grid fills cell instead of 100vh */
+.grid-stack-item-content .dashboard-grid-widget-content-wrapper .grid-stack {
+  height: 100% !important;
+  max-height: 100%;
+}
+
+.card .card-body {
+  padding: 0.5rem;
+}

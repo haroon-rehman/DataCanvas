@@ -1,0 +1,148 @@
+{
+    "version": 1,
+    "default": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+    "fonts": [
+      {
+        "name": "System Default",
+        "stack": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "category": "system",
+        "recommended": true
+      },
+  
+      {
+        "name": "Segoe UI",
+        "stack": "\"Segoe UI\", system-ui, sans-serif",
+        "category": "system"
+      },
+      {
+        "name": "Segoe UI Variable",
+        "stack": "\"Segoe UI Variable\", \"Segoe UI\", system-ui, sans-serif",
+        "category": "system"
+      },
+  
+      {
+        "name": "Calibri",
+        "stack": "Calibri, \"Segoe UI\", sans-serif",
+        "category": "sans-serif"
+      },
+      {
+        "name": "Cambria",
+        "stack": "Cambria, \"Times New Roman\", serif",
+        "category": "serif"
+      },
+      {
+        "name": "Candara",
+        "stack": "Candara, \"Segoe UI\", sans-serif",
+        "category": "sans-serif"
+      },
+      {
+        "name": "Corbel",
+        "stack": "Corbel, \"Segoe UI\", sans-serif",
+        "category": "sans-serif"
+      },
+      {
+        "name": "Tahoma",
+        "stack": "Tahoma, \"Segoe UI\", sans-serif",
+        "category": "sans-serif"
+      },
+      {
+        "name": "Trebuchet MS",
+        "stack": "\"Trebuchet MS\", Arial, sans-serif",
+        "category": "sans-serif"
+      },
+  
+      {
+        "name": "Arial",
+        "stack": "Arial, \"Segoe UI\", sans-serif",
+        "category": "sans-serif"
+      },
+      {
+        "name": "Arial Black",
+        "stack": "\"Arial Black\", Arial, sans-serif",
+        "category": "display"
+      },
+      {
+        "name": "Verdana",
+        "stack": "Verdana, Arial, sans-serif",
+        "category": "sans-serif"
+      },
+      {
+        "name": "Helvetica (fallback)",
+        "stack": "Helvetica, Arial, sans-serif",
+        "category": "sans-serif",
+        "note": "Primarily for macOS/Linux fallback; not usually installed on Windows."
+      },
+  
+      {
+        "name": "Times New Roman",
+        "stack": "\"Times New Roman\", Times, serif",
+        "category": "serif"
+      },
+      {
+        "name": "Georgia",
+        "stack": "Georgia, \"Times New Roman\", serif",
+        "category": "serif"
+      },
+      {
+        "name": "Garamond",
+        "stack": "Garamond, serif",
+        "category": "serif"
+      },
+      {
+        "name": "Palatino Linotype",
+        "stack": "\"Palatino Linotype\", Palatino, serif",
+        "category": "serif"
+      },
+  
+      {
+        "name": "Consolas",
+        "stack": "Consolas, \"Courier New\", monospace",
+        "category": "monospace"
+      },
+      {
+        "name": "Cascadia Mono",
+        "stack": "\"Cascadia Mono\", Consolas, monospace",
+        "category": "monospace"
+      },
+      {
+        "name": "Cascadia Code",
+        "stack": "\"Cascadia Code\", Consolas, monospace",
+        "category": "monospace"
+      },
+      {
+        "name": "Courier New",
+        "stack": "\"Courier New\", monospace",
+        "category": "monospace"
+      },
+      {
+        "name": "Lucida Console",
+        "stack": "\"Lucida Console\", monospace",
+        "category": "monospace"
+      },
+  
+      {
+        "name": "Lucida Sans Unicode",
+        "stack": "\"Lucida Sans Unicode\", \"Segoe UI\", sans-serif",
+        "category": "sans-serif"
+      },
+  
+      {
+        "name": "Comic Sans MS",
+        "stack": "\"Comic Sans MS\", \"Segoe UI\", sans-serif",
+        "category": "display"
+      },
+      {
+        "name": "Impact",
+        "stack": "Impact, \"Arial Black\", sans-serif",
+        "category": "display"
+      },
+  
+      {
+        "name": "Segoe UI (Arabic Friendly)",
+        "stack": "\"Segoe UI\", Tahoma, sans-serif",
+        "category": "system",
+        "rtlSafe": true
+      }
+    ]
+  }
+  
