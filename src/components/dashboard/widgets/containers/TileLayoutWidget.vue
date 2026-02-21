@@ -407,6 +407,7 @@ const rowHeightPx = ref(100);
 const rowHeightPercent = ref("100%");
 const rowHeightPercentNum = ref(100);
 const colColspanInput = ref(1);
+const colRowspanInput = ref(1);
 const colWidthPxInput = ref(200);
 const colWidthPctInput = ref(30);
 
@@ -553,10 +554,21 @@ const isCellSelected = computed(
     isColumnSelected.value && selectedSettingsPanel.value === "cell",
 );
 
-/** Same as selectedColumn but only when Cell Settings panel is open (for Cell offcanvas). */
-const selectedCell = computed(() =>
-  selectedSettingsPanel.value === "cell" ? selectedColumn.value : null,
-);
+/** Same as selectedColumn but only when Cell Settings panel is open (for Cell offcanvas).
+ *  Adds an allCells alias used by the Cell quick actions template.
+ */
+const selectedCell = computed(() => {
+  if (selectedSettingsPanel.value !== "cell") return null;
+  const base = selectedColumn.value;
+  if (!base) return null;
+  const totalRows = localModel.value?.rows?.length ?? 0;
+  const maxRowspan = Math.max(1, totalRows - base.rowIndex);
+  return {
+    ...base,
+    allCells: base.allColumns,
+    maxRowspan,
+  };
+});
 
 const selectedColumn = computed(() => {
   if (!isColumnSelected.value) return null;
@@ -617,6 +629,24 @@ watch(
     }
   },
   { immediate: true },
+);
+
+// Sync cell-level colspan and rowspan inputs when the selected cell changes
+watch(
+  () => selectedCell.value,
+  (cell) => {
+    if (!cell) return;
+    const row = cell.row;
+    const cols =
+      row && Array.isArray(row.columns) ? row.columns : [];
+    const colSpec = cols[cell.colIndex] ?? {};
+
+    const span = colSpec.colspan ?? cell.colspan ?? 1;
+    const rowSpan = colSpec.rowSpan ?? 1;
+
+    colColspanInput.value = span;
+    colRowspanInput.value = rowSpan;
+  },
 );
 
 /** Global column count: max grid tracks across all rows (sum of colspans per row). All rows share the same column tracks. */
@@ -810,20 +840,192 @@ function getColumnSpecAtTrack(row, trackIndex) {
   return null;
 }
 
-/** Grid placement for a cell in the shared grid: gridRow and gridColumn (accounts for colspan). */
+/** Compute the grid track start/end (1-based, end exclusive) for a given cell, accounting for colspan. */
+function getCellTrackRange(row, colIndex) {
+  const cols = row.columns && Array.isArray(row.columns) ? row.columns : [];
+  let start = 1;
+  for (let i = 0; i < colIndex; i++) {
+    start += Math.max(1, cols[i].colspan ?? 1);
+  }
+  const span = Math.max(1, cols[colIndex]?.colspan ?? 1);
+  const end = start + span;
+  return { start, end, span };
+}
+
+/** Grid placement for a cell in the shared grid: gridRow and gridColumn (accounts for colspan and optional rowSpan). */
 function getCellPlacement(row, rowIndex, colIndex) {
   const cols = row.columns && Array.isArray(row.columns) ? row.columns : [];
   const maxCols = maxColumns.value;
-  let colStart = 1;
-  for (let i = 0; i < colIndex; i++) {
-    colStart += Math.max(1, cols[i].colspan ?? 1);
-  }
-  const span = Math.max(1, cols[colIndex]?.colspan ?? 1);
-  const colEnd = Math.min(colStart + span, maxCols + 1);
+  const { start: colStart, end: rawColEnd } = getCellTrackRange(row, colIndex);
+  const colSpec = cols[colIndex];
+  const colEnd = Math.min(rawColEnd, maxCols + 1);
+
+  // Optional row span: number of rows this cell visually covers.
+  // We clamp to the number of rows so rowSpan cannot exceed the layout.
+  const rowSpan = Math.max(1, colSpec?.rowSpan ?? 1);
+  const rowStart = rowIndex + 1;
+  const rowEnd = Math.min(
+    rowStart + rowSpan,
+    (localModel.value?.rows?.length ?? 0) + 1,
+  );
+
   return {
-    gridRow: rowIndex + 1,
+    gridRow: `${rowStart} / ${rowEnd}`,
     gridColumn: `${colStart} / ${colEnd}`,
   };
+}
+
+/** Returns true when this cell is visually covered by a row-spanning cell from a previous row. */
+function isCellCoveredByRowspan(rowIndex, colIndex) {
+  const rows = localModel.value?.rows ?? [];
+  if (!rows.length || rowIndex <= 0) return false;
+
+  const row = rows[rowIndex];
+  const cols = row.columns && Array.isArray(row.columns) ? row.columns : [];
+  if (!cols.length || colIndex >= cols.length) return false;
+
+  // Compute this cell's column track range (same colspan rules as getCellPlacement)
+  const { start: curStart, end: curEnd } = getCellTrackRange(row, colIndex);
+  const currentRowNumber = rowIndex + 1;
+
+  // Look for any previous-row cell whose rowSpan covers this row and whose column range overlaps
+  for (let r = 0; r < rowIndex; r++) {
+    const prevRow = rows[r];
+    const prevCols =
+      prevRow.columns && Array.isArray(prevRow.columns) ? prevRow.columns : [];
+    for (let c = 0; c < prevCols.length; c++) {
+      const spec = prevCols[c];
+      const { start: prevStart, end: prevEnd } = getCellTrackRange(
+        prevRow,
+        c,
+      );
+      const rowSpan = Math.max(1, spec.rowSpan ?? 1);
+
+      if (rowSpan > 1) {
+        const rowStart = r + 1;
+        const rowEnd = rowStart + rowSpan; // exclusive
+        const rowsOverlap =
+          currentRowNumber >= rowStart && currentRowNumber < rowEnd;
+        const colsOverlap = !(prevEnd <= curStart || prevStart >= curEnd);
+        if (rowsOverlap && colsOverlap) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/** Clears content from any cells that are covered by the given row-spanning cell. */
+function clearCoveredCellsForRowspan(spanningRowIndex, spanningColIndex) {
+  const rows = localModel.value?.rows ?? [];
+  if (!rows.length) return;
+
+  const spanRow = rows[spanningRowIndex];
+  const spanCols =
+    spanRow.columns && Array.isArray(spanRow.columns) ? spanRow.columns : [];
+  if (!spanCols.length || spanningColIndex >= spanCols.length) return;
+
+  // Compute the spanning cell's column track range
+  const { start: spanColStart, end: spanColEnd } = getCellTrackRange(
+    spanRow,
+    spanningColIndex,
+  );
+
+  const rowSpan = Math.max(1, spanCols[spanningColIndex].rowSpan ?? 1);
+  if (rowSpan <= 1) return;
+
+  const rowStart = spanningRowIndex + 1;
+  const rowEnd = Math.min(rowStart + rowSpan, rows.length + 1); // exclusive
+
+  const newRows = rows.map((row, rIndex) => {
+    const rowNumber = rIndex + 1;
+    // Only clear cells in rows strictly below the spanning row and within its rowSpan
+    if (rowNumber <= rowStart || rowNumber >= rowEnd) return row;
+
+    const cols =
+      row.columns && Array.isArray(row.columns) ? [...row.columns] : [];
+    if (!cols.length) return row;
+
+    let colTrackStart = 1;
+    for (let c = 0; c < cols.length; c++) {
+      const cell = cols[c];
+      const cellSpan = Math.max(1, cell.colspan ?? 1);
+      const colTrackEnd = colTrackStart + cellSpan;
+      const colsOverlap = !(
+        colTrackEnd <= spanColStart || colTrackStart >= spanColEnd
+      );
+
+      if (colsOverlap && cell.content) {
+        cols[c] = { ...cell, content: undefined };
+      }
+
+      colTrackStart += cellSpan;
+    }
+
+    return { ...row, columns: cols };
+  });
+
+  localModel.value = { ...localModel.value, rows: newRows };
+}
+
+/** Clears content from any cells in the same row that are covered by the given column's colspan. */
+function clearCoveredCellsForColspan(rowIndex, colIndex) {
+  const rows = localModel.value?.rows ?? [];
+  if (!rows.length) return;
+
+  const row = rows[rowIndex];
+  const cols = row.columns && Array.isArray(row.columns) ? row.columns : [];
+  if (!cols.length || colIndex >= cols.length) return;
+
+  const spanSpec = cols[colIndex];
+  const { start: spanColStart, end: spanColEnd, span: spanColSpan } =
+    getCellTrackRange(row, colIndex);
+  if (spanColSpan <= 1) return;
+
+  // Build a new columns array where any horizontally covered cells keep their
+  // slot (index) but have their content cleared. This way region indices stay
+  // stable (e.g. Region 2-4 stays Region 2-4), while the spanning cell owns
+  // the visual space over its covered neighbors.
+  const newCols = cols.map((cell, cIdx) => {
+    if (cIdx === colIndex) return cell;
+    const { start: cellStart, end: cellEnd } = getCellTrackRange(row, cIdx);
+    const colsOverlap = !(cellEnd <= spanColStart || cellStart >= spanColEnd);
+    if (colsOverlap && cell.content) {
+      return { ...cell, content: undefined };
+    }
+    return cell;
+  });
+
+  const newRows = rows.map((r, i) =>
+    i === rowIndex ? { ...r, columns: newCols } : r,
+  );
+
+  localModel.value = { ...localModel.value, rows: newRows };
+}
+
+/** Returns true when this cell is horizontally covered by another cell in the same row with colspan > 1. */
+function isCellCoveredByColspan(rowIndex, colIndex) {
+  const rows = localModel.value?.rows ?? [];
+  if (!rows.length) return false;
+  const row = rows[rowIndex];
+  const cols = row.columns && Array.isArray(row.columns) ? row.columns : [];
+  if (!cols.length || colIndex >= cols.length) return false;
+
+  const { start: curStart, end: curEnd } = getCellTrackRange(row, colIndex);
+
+  for (let c = 0; c < cols.length; c++) {
+    if (c === colIndex) continue;
+    const spec = cols[c];
+    const span = Math.max(1, spec.colspan ?? 1);
+    if (span <= 1) continue;
+    const { start, end } = getCellTrackRange(row, c);
+    const colsOverlap = !(end <= curStart || start >= curEnd);
+    if (colsOverlap) return true;
+  }
+
+  return false;
 }
 
 function getCellStyle(row, colIndex) {
@@ -1355,6 +1557,27 @@ function updateColumnColspan(rowIndex, colIndex, newColspan) {
     return;
   row.columns[colIndex] = { ...row.columns[colIndex], colspan: span };
   localModel.value = { ...localModel.value, rows: newRows };
+
+  // After updating the colspan, clear any cells in this row that are now covered
+  clearCoveredCellsForColspan(rowIndex, colIndex);
+}
+
+function updateCellRowspan(rowIndex, colIndex, newRowspan) {
+  const span = Math.max(1, parseInt(newRowspan, 10) || 1);
+  const newRows = [...localModel.value.rows];
+  const row = newRows[rowIndex];
+  if (
+    !row.columns ||
+    !Array.isArray(row.columns) ||
+    colIndex >= row.columns.length
+  )
+    return;
+  row.columns[colIndex] = { ...row.columns[colIndex], rowSpan: span };
+  localModel.value = { ...localModel.value, rows: newRows };
+
+  // After updating the rowSpan, clear any underlying cell content that is now visually covered
+  // by this spanning cell so hidden cells don't keep stale widgets.
+  clearCoveredCellsForRowspan(rowIndex, colIndex);
 }
 
 function resetColumnWidthPx() {
@@ -1379,6 +1602,15 @@ function resetColumnColspan() {
   const val = info.colspan ?? 1;
   colColspanInput.value = val;
   updateColumnColspan(info.rowIndex, info.colIndex, val);
+}
+
+function resetCellRowspan() {
+  const cell = selectedCell.value;
+  if (!cell) return;
+  const current = cell.row?.columns?.[cell.colIndex]?.rowSpan ?? 1;
+  const val = Math.max(1, parseInt(current, 10) || 1);
+  colRowspanInput.value = val;
+  updateCellRowspan(cell.rowIndex, cell.colIndex, val);
 }
 
 function resetRowHeightPx() {
@@ -1478,12 +1710,16 @@ onMounted(() => {
           @click.stop
         >
           <!-- Cells: one per (row, col) slot; grid placement aligns columns across rows -->
-          <template v-for="(row, rowIndex) in localModel.rows" :key="row.id">
+          <template v-for="(row, rowIndex) in localModel.rows">
             <template v-if="row.columns && row.columns.length > 0">
               <div
                 v-for="(col, colIndex) in row.columns"
                 :key="`${row.id}-${colIndex}`"
                 class="grid-cell"
+                v-show="
+                  !isCellCoveredByRowspan(rowIndex, colIndex) &&
+                  !isCellCoveredByColspan(rowIndex, colIndex)
+                "
                 :data-row-selected="
                   editMode &&
                   localModel.selectedRegionId === getRegionId(row.id)
@@ -1629,6 +1865,7 @@ onMounted(() => {
             </template>
             <template v-else>
               <div
+                :key="`${row.id}-empty`"
                 class="grid-cell grid-cell-empty"
                 :data-row-selected="
                   editMode &&
@@ -2332,6 +2569,56 @@ onMounted(() => {
                     type="button"
                     class="btn btn-sm btn-outline-secondary"
                     @click="resetColumnColspan"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              <!-- Cell Rowspan -->
+              <div class="mb-3">
+                <label
+                  class="form-label"
+                  :for="`cell-rowspan-${offcanvasIdPrefix}-${selectedCell.rowIndex}-${selectedCell.colIndex}`"
+                >
+                  <strong>Cell Rowspan</strong>
+                  <small class="text-muted d-block"
+                    >Number of rows this cell spans</small
+                  >
+                </label>
+                <div class="d-flex gap-2 align-items-center">
+                  <input
+                    :id="`cell-rowspan-${offcanvasIdPrefix}-${selectedCell.rowIndex}-${selectedCell.colIndex}`"
+                    type="number"
+                    class="form-control flex-grow-1"
+                    v-model.number="colRowspanInput"
+                    :min="1"
+                    :max="selectedCell.maxRowspan"
+                    step="1"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-primary"
+                    @click="
+                      updateCellRowspan(
+                        selectedCell.rowIndex,
+                        selectedCell.colIndex,
+                        Math.max(
+                          1,
+                          Math.min(
+                            selectedCell.maxRowspan,
+                            colRowspanInput ?? 1,
+                          ),
+                        ),
+                      )
+                    "
+                  >
+                    Apply
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    @click="resetCellRowspan"
                   >
                     Reset
                   </button>
