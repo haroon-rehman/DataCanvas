@@ -3,6 +3,8 @@ import { ref, computed, watch, onMounted, inject, provide } from "vue";
 import { useRoute } from "vue-router";
 import { widgetMeta as iconValueWidgetMeta } from "../metrics/IconValueWidget.vue";
 import { widgetMeta as valueWidgetMeta } from "../metrics/ValueWidget.vue";
+import { widgetMeta as pieChartWidgetMeta } from "../metrics/PieChartWidget.vue";
+import { widgetMeta as barChartWidgetMeta } from "../metrics/BarChartWidget.vue";
 import { widgetMeta as gridLayoutWidgetMeta } from "./GridLayoutWidget.vue";
 import { generateWidgetIdentifier } from "../../_internals/widgetIdentifierCounter.js";
 import {
@@ -21,6 +23,8 @@ const widgetMeta = {
 // Registry of widgets for the selector: { type, friendlyName, description, icon, group }
 const WIDGET_REGISTRY = [
   { type: "IconValueWidget", ...iconValueWidgetMeta },
+  { type: "PieChartWidget", ...pieChartWidgetMeta },
+  { type: "BarChartWidget", ...barChartWidgetMeta },
   { type: "GridLayoutWidget", ...gridLayoutWidgetMeta },
   { type: "TileLayoutWidget", ...widgetMeta },
   { type: "ValueWidget", ...valueWidgetMeta },
@@ -649,7 +653,7 @@ watch(
   },
 );
 
-/** Global column count: max grid tracks across all rows (sum of colspans per row). All rows share the same column tracks. */
+/** Global column count: max number of logical columns across all rows. All rows share the same tracks. */
 const maxColumns = computed(() => {
   const rows = localModel.value?.rows;
   if (!rows || rows.length === 0) return 1;
@@ -657,7 +661,7 @@ const maxColumns = computed(() => {
     1,
     ...rows.map((r) => {
       const cols = r.columns && Array.isArray(r.columns) ? r.columns : [];
-      return cols.reduce((sum, c) => sum + Math.max(1, c.colspan ?? 1), 0);
+      return cols.length;
     }),
   );
 });
@@ -828,25 +832,16 @@ function getRegionId(rowId, colIndex) {
 //   Edit Mode            | editMode = true              | ?edit=1
 //   Preview Mode         | editMode = false             | ?edit=0 or omitted
 
-/** Get the column spec that covers a given grid track index in a row (accounts for colspan). */
+/** Get the column spec for a given grid track index in a row (1:1 with column index). */
 function getColumnSpecAtTrack(row, trackIndex) {
   const cols = row.columns && Array.isArray(row.columns) ? row.columns : [];
-  let pos = 0;
-  for (const col of cols) {
-    const span = Math.max(1, col.colspan ?? 1);
-    if (trackIndex >= pos && trackIndex < pos + span) return col;
-    pos += span;
-  }
-  return null;
+  return cols[trackIndex] ?? null;
 }
 
-/** Compute the grid track start/end (1-based, end exclusive) for a given cell, accounting for colspan. */
+/** Compute the grid track start/end (1-based, end exclusive) for a given cell, using its column index. */
 function getCellTrackRange(row, colIndex) {
   const cols = row.columns && Array.isArray(row.columns) ? row.columns : [];
-  let start = 1;
-  for (let i = 0; i < colIndex; i++) {
-    start += Math.max(1, cols[i].colspan ?? 1);
-  }
+  const start = colIndex + 1;
   const span = Math.max(1, cols[colIndex]?.colspan ?? 1);
   const end = start + span;
   return { start, end, span };
@@ -1186,6 +1181,22 @@ function getDefaultPropsForWidgetType(type) {
         label: "",
         icon: "fa-chart-simple",
         iconColor: "steelblue",
+      };
+    case "PieChartWidget":
+      return {
+        identifier: generateWidgetIdentifier("PieChartWidget"),
+        title: "Pie Chart",
+        labels: "A,B,C",
+        values: "40,30,30",
+        colors: "#0d6efd,#6c757d,#198754",
+      };
+    case "BarChartWidget":
+      return {
+        identifier: generateWidgetIdentifier("BarChartWidget"),
+        title: "Bar Chart",
+        labels: "Jan,Feb,Mar",
+        values: "10,20,30",
+        color: "#0d6efd",
       };
     case "GridLayoutWidget":
       return {
@@ -1889,7 +1900,7 @@ onMounted(() => {
                         localModel.selectedRegionId === getRegionId(row.id),
                     }"
                     title="Row Settings"
-                    @click.stop="selectRegion(getRegionId(row.id))"
+                    @click.stop="onRowSettingsClick(row.id, $event)"
                   >
                     <i class="fa-solid fa-gear"></i>
                   </button>

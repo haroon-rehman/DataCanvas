@@ -6,6 +6,8 @@ import TileLayoutWidget from '../components/dashboard/widgets/containers/TileLay
 import GridLayoutWidget, { gridDefaults as gridLayoutGridDefaults } from '../components/dashboard/widgets/containers/GridLayoutWidget.vue'
 import IconValueWidget, { gridDefaults as iconValueGridDefaults } from '../components/dashboard/widgets/metrics/IconValueWidget.vue'
 import ValueWidget, { gridDefaults as valueGridDefaults } from '../components/dashboard/widgets/metrics/ValueWidget.vue'
+import PieChartWidget, { gridDefaults as pieChartGridDefaults } from '../components/dashboard/widgets/metrics/PieChartWidget.vue'
+import BarChartWidget, { gridDefaults as barChartGridDefaults } from '../components/dashboard/widgets/metrics/BarChartWidget.vue'
 import PropertyGridWidget from '../components/dashboard/_internals/PropertyGridWidget.vue'
 import WidgetsSelectorWidget from '../components/dashboard/_internals/WidgetsSelectorWidget.vue'
 
@@ -17,11 +19,15 @@ const widgetComponents = {
   ValueWidget,
   GridLayoutWidget,
   TileLayoutWidget,
+  PieChartWidget,
+  BarChartWidget,
 }
 const gridDefaultsByType = {
   IconValueWidget: iconValueGridDefaults,
   ValueWidget: valueGridDefaults,
   GridLayoutWidget: gridLayoutGridDefaults,
+  PieChartWidget: pieChartGridDefaults,
+  BarChartWidget: barChartGridDefaults,
 }
 const gridOptions = {
   column: 3,

@@ -32,6 +32,7 @@ function getEditableRows(data) {
           key: leaf.key,
           label: leaf.label ?? leaf.key,
           value: leaf.value,
+          type: leaf.type, // e.g. 'boolean', 'string', 'number'
           control: leaf.control ?? 'text',
           options: leaf.options ?? null,
           default: leaf.default,
@@ -118,7 +119,7 @@ function handleInput(row, newValue) {
                     {{ row.label }}
                   </label>
                   <div class="property-grid__controls">
-                    <!-- Control type: font | colorPure | colorBoth | select | number | text -->
+                    <!-- Control type: font | colorPure | colorBoth | select | number | boolean (switch) | text -->
                     <FontSelect
                       v-if="row.control === 'font'"
                       :model-value="row.value"
@@ -143,6 +144,18 @@ function handleInput(row, newValue) {
                         @update:model-value="(v) => handleInput(row, v)"
                       />
                     </template>
+                    <div
+                      v-else-if="row.type === 'boolean' || row.control === 'switch'"
+                      class="form-check form-switch"
+                    >
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        :id="`prop-${row.key}`"
+                        :checked="row.value === true || row.value === 'true'"
+                        @change="handleInput(row, $event.target.checked)"
+                      />
+                    </div>
                     <select
                       v-else-if="row.control === 'select' && row.options?.length"
                       :id="`prop-${row.key}`"

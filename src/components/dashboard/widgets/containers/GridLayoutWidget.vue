@@ -1,8 +1,12 @@
 <script>
 import IconValueWidget from '../metrics/IconValueWidget.vue'
 import ValueWidget from '../metrics/ValueWidget.vue'
+import PieChartWidget from '../metrics/PieChartWidget.vue'
+import BarChartWidget from '../metrics/BarChartWidget.vue'
 import { gridDefaults as iconValueGridDefaults } from '../metrics/IconValueWidget.vue'
 import { gridDefaults as valueGridDefaults } from '../metrics/ValueWidget.vue'
+import { gridDefaults as pieChartGridDefaults } from '../metrics/PieChartWidget.vue'
+import { gridDefaults as barChartGridDefaults } from '../metrics/BarChartWidget.vue'
 
 /** Default grid size when this widget is used inside a layout. */
 export const gridDefaults = { w: 2, h: 2, minW: 1, minH: 1 }
@@ -70,22 +74,36 @@ export function buildPropertySchema(props = {}) {
 }
 
 /** Allowed child widget types: type name -> component. Only these are rendered as grid items. Also used as default widgetComponents. */
-export const ALLOWED_CHILD_TYPES = { IconValueWidget, ValueWidget }
+export const ALLOWED_CHILD_TYPES = {
+  IconValueWidget,
+  ValueWidget,
+  PieChartWidget,
+  BarChartWidget,
+}
 
 /** Default grid defaults when not provided. */
-export const DEFAULT_GRID_DEFAULTS_BY_TYPE = { IconValueWidget: iconValueGridDefaults, ValueWidget: valueGridDefaults }
+export const DEFAULT_GRID_DEFAULTS_BY_TYPE = {
+  IconValueWidget: iconValueGridDefaults,
+  ValueWidget: valueGridDefaults,
+  PieChartWidget: pieChartGridDefaults,
+  BarChartWidget: barChartGridDefaults,
+}
 </script>
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, computed, inject, watch } from 'vue'
 import { GridStack } from 'gridstack'
 import { buildPropertySchema as buildIconValuePropertySchema } from '../metrics/IconValueWidget.vue'
 import { buildPropertySchema as buildValuePropertySchema } from '../metrics/ValueWidget.vue'
+import { buildPropertySchema as buildPieChartPropertySchema } from '../metrics/PieChartWidget.vue'
+import { buildPropertySchema as buildBarChartPropertySchema } from '../metrics/BarChartWidget.vue'
 
 /** Builds property schema for a widget by type (used after property change). */
 function buildPropertySchemaForWidget(widget) {
   if (!widget) return null
   if (widget.type === 'IconValueWidget') return buildIconValuePropertySchema(widget)
   if (widget.type === 'ValueWidget') return buildValuePropertySchema(widget)
+  if (widget.type === 'PieChartWidget') return buildPieChartPropertySchema(widget)
+  if (widget.type === 'BarChartWidget') return buildBarChartPropertySchema(widget)
   return null
 }
 
