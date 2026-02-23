@@ -1,0 +1,195 @@
+{
+  "id": "2c437dca-7174-42c0-y316-eda2e9a930b9",
+  "label": "test",
+  "description": "test desc",
+  "created": "2026-02-22T20:20:40.775Z",
+  "updated": "2026-02-22T20:43:59.917Z",
+  "layout": {
+    "rows": [
+      {
+        "id": "row-1771792191919-ejfv4ybgs",
+        "height": {
+          "kind": "percent",
+          "percent": "100%"
+        },
+        "columns": [
+          {
+            "kind": "auto",
+            "content": {
+              "type": "IconValueWidget",
+              "props": {
+                "identifier": "IconValueWidget1",
+                "value": "--",
+                "label": "test",
+                "icon": "fa-chart-simple",
+                "iconColor": "steelblue",
+                "dock": "none",
+                "verticalAlignment": "center",
+                "labelFontSize": "fs-5",
+                "iconSize": "fa-5x",
+                "contentHorizontalAlignment": "center",
+                "contentVerticalAlignment": "center",
+                "valueHorizontalAlignment": "center",
+                "iconHorizontalAlignment": "center",
+                "labelHorizontalAlignment": "center"
+              }
+            }
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          }
+        ]
+      },
+      {
+        "id": "row-1771792192652-fea5szq2q",
+        "height": {
+          "kind": "percent",
+          "percent": "100%"
+        },
+        "columns": [
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          }
+        ]
+      },
+      {
+        "id": "row-1771792193108-6anrnl0fd",
+        "height": {
+          "kind": "percent",
+          "percent": "100%"
+        },
+        "columns": [
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          }
+        ]
+      },
+      {
+        "id": "row-1771792193497-lso2swpxr",
+        "height": {
+          "kind": "percent",
+          "percent": "100%"
+        },
+        "columns": [
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          }
+        ]
+      },
+      {
+        "id": "row-1771791623020-41e98717h",
+        "height": {
+          "kind": "percent",
+          "percent": "100%"
+        },
+        "columns": [
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          },
+          {
+            "kind": "auto"
+          }
+        ]
+      }
+    ]
+  }
+}

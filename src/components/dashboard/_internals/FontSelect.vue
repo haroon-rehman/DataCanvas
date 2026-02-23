@@ -18,9 +18,7 @@ if (!fontConfig) {
   throw new Error('fontConfig was not provided. Provide it in app bootstrap via app.provide("fontConfig", config).')
 }
 
-const options = computed(() => {
-  return (fontConfig.fonts || []).filter((f) => f && f.name && f.stack)
-})
+const options = computed(() => (fontConfig.fonts || []).filter((f) => f && f.name && f.stack))
 
 const byStack = computed(() => {
   const map = new Map()
@@ -30,11 +28,22 @@ const byStack = computed(() => {
   return map
 })
 
-/** Use default when value is empty or not in font config (e.g. 'inherit') */
-const effectiveValue = computed(() => {
+/**
+ * Selected option object for vue-select.
+ * - When modelValue is empty/'inherit'/'initial' → map to the default option
+ * - Otherwise look up by stack; if missing, still fall back to default so the label is stable.
+ */
+const selectedOption = computed(() => {
   const v = props.modelValue
-  if (!v || !byStack.value.has(v)) return fontConfig.default
-  return v
+  const all = options.value
+  if (!all.length) return null
+
+  if (!v || v === 'inherit' || v === 'initial') {
+    const byDefault = byStack.value.get(fontConfig.default)
+    return byDefault ?? all[0]
+  }
+
+  return byStack.value.get(v) ?? byStack.value.get(fontConfig.default) ?? all[0]
 })
 
 function getOptionLabel(option) {
@@ -42,13 +51,8 @@ function getOptionLabel(option) {
   return option.recommended ? `⭐ ${option.name}` : option.name
 }
 
-function reduce(option) {
-  return option?.stack ?? ''
-}
-
-async function onUpdate(stack) {
-  const value = stack ?? ''
-  const option = value ? byStack.value.get(value) : null
+async function onUpdate(option) {
+  const value = option?.stack ?? ''
 
   if (option?.url) {
     await loadFont(option.url)
@@ -63,10 +67,9 @@ async function onUpdate(stack) {
 
 <template>
   <VSelect
-    :model-value="effectiveValue"
+    :model-value="selectedOption"
     :options="options"
     :get-option-label="getOptionLabel"
-    :reduce="reduce"
     placeholder="Select font..."
     searchable
     clearable

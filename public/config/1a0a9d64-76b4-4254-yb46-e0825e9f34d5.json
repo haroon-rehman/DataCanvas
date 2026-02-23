@@ -1,0 +1,23 @@
+{
+  "id": "1a0a9d64-76b4-4254-yb46-e0825e9f34d5",
+  "label": "test2",
+  "description": "test2 desc",
+  "created": "2026-02-22T20:21:08.216Z",
+  "updated": "2026-02-22T20:21:08.216Z",
+  "layout": {
+    "rows": [
+      {
+        "id": "row-1771791656487-kivjegi4d",
+        "height": {
+          "kind": "percent",
+          "percent": "100%"
+        },
+        "columns": [
+          {
+            "kind": "auto"
+          }
+        ]
+      }
+    ]
+  }
+}

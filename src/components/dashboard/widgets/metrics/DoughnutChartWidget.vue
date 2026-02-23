@@ -4,21 +4,21 @@ export const gridDefaults = { w: 2, h: 2, minW: 1, minH: 2 }
 
 /** Metadata for the widget selector (friendly name, description, icon, group). */
 export const widgetMeta = {
-  friendlyName: 'Bar Chart',
-  description: 'Displays a bar chart for categorical metrics.',
-  icon: 'fa-solid fa-chart-column',
+  friendlyName: 'Doughnut Chart',
+  description: 'Displays a doughnut chart for categorical metrics.',
+  icon: 'fa-solid fa-circle-notch',
   group: 'Charts',
 }
 
-/** Full property metadata for BarChartWidget (bar‑chart focused). */
+/** Full property metadata for DoughnutChartWidget (doughnut‑chart focused). */
 export const PROP_SCHEMA = {
   identifier: { type: 'string', default: '', control: 'text', label: 'Identifier' },
 
   // Card title (shown above chart)
-  title: { type: 'string', default: 'Bar Chart', control: 'text', label: 'Title' },
+  title: { type: 'string', default: 'Doughnut Chart', control: 'text', label: 'Title' },
   showTitle: { type: 'boolean', default: true, control: 'switch', label: 'Show Title' },
-  titleFontColor: { type: 'string', default: '#6c757d', control: 'colorPure', label: 'Font Color' },
-  titleFontFamily: { type: 'string', default: 'inherit', control: 'font', label: 'Font Family' },
+  titleFontColor: { type: 'string', default: '#6c757d', control: 'colorPure', label: 'Font color' },
+  titleFontFamily: { type: 'string', default: 'inherit', control: 'font', label: 'Font family' },
   titleFontSize: {
     type: 'number',
     default: 14,
@@ -30,82 +30,50 @@ export const PROP_SCHEMA = {
   },
   titleVerticalAlignment: {
     type: 'string',
-    default: 'Top',
+    default: 'top',
     control: 'select',
-    options: ['Top', 'Bottom'],
+    options: ['top', 'bottom'],
     label: 'Vertical Alignment',
   },
   titleHorizontalAlignment: {
     type: 'string',
-    default: 'Center',
+    default: 'center',
     control: 'select',
-    options: ['Left', 'Center', 'Right'],
+    options: ['left', 'center', 'right'],
     label: 'Horizontal Alignment',
   },
 
-  // Bar data
+  // Data
   labels: {
     type: 'string',
-    default: 'Jan,Feb,Mar',
+    default: 'A,B,C',
     control: 'text',
     label: 'Labels (Comma Separated)',
   },
   values: {
     type: 'string',
-    default: '10,20,30',
+    default: '40,30,30',
     control: 'text',
     label: 'Values (Comma Separated)',
   },
-  barColor: {
+  colors: {
     type: 'string',
-    default: '#0d6efd',
-    control: 'colorPure',
-    label: 'Bar Color',
+    default: '#0d6efd,#6c757d,#198754',
+    control: 'text',
+    label: 'Slice Colors (Comma Separated)',
   },
 
-  // Bar appearance / behaviour
-  barBorderWidth: {
+  // Appearance / behaviour
+  sliceBorderWidth: {
     type: 'number',
     default: 0,
     control: 'number',
-    label: 'Bar Border Width (px)',
+    label: 'Slice Border Width (px)',
     min: 0,
     max: 10,
     step: 1,
   },
-  barBorderColor: { type: 'string', default: '', control: 'colorPure', label: 'Bar Border Color' },
-  indexAxis: {
-    type: 'string',
-    default: 'x',
-    control: 'select',
-    options: ['x', 'y'],
-    label: 'Bar Orientation',
-  },
-  barPercentage: {
-    type: 'number',
-    default: 0.9,
-    control: 'number',
-    label: 'Bar Thickness (Relative)',
-    min: 0.1,
-    max: 1,
-    step: 0.05,
-  },
-  categoryPercentage: {
-    type: 'number',
-    default: 0.8,
-    control: 'number',
-    label: 'Category Fill (Relative)',
-    min: 0.1,
-    max: 1,
-    step: 0.05,
-  },
-  yBeginAtZero: { type: 'boolean', default: true, control: 'switch', label: 'Y Axis Begin at Zero' },
-  yTicksShowAsThousands: {
-    type: 'boolean',
-    default: false,
-    control: 'switch',
-    label: 'Y Axis in Thousands (10k, 20k)',
-  },
+  sliceBorderColor: { type: 'string', default: '', control: 'colorPure', label: 'Slice Border Color' },
   fillCell: {
     type: 'boolean',
     default: true,
@@ -114,9 +82,9 @@ export const PROP_SCHEMA = {
   },
   verticalAlignment: {
     type: 'string',
-    default: 'Center',
+    default: 'center',
     control: 'select',
-    options: ['Top', 'Center', 'Bottom'],
+    options: ['top', 'center', 'bottom'],
     label: 'Vertical Alignment',
   },
   maintainAspectRatio: {
@@ -130,9 +98,9 @@ export const PROP_SCHEMA = {
   legendDisplay: { type: 'boolean', default: true, control: 'switch', label: 'Show Legend' },
   legendPosition: {
     type: 'string',
-    default: 'Top',
+    default: 'bottom',
     control: 'select',
-    options: ['Top', 'Right', 'Bottom', 'Left'],
+    options: ['top', 'right', 'bottom', 'left'],
     label: 'Position',
   },
   legendFontColor: { type: 'string', default: '#6c757d', control: 'colorPure', label: 'Font color' },
@@ -168,9 +136,8 @@ export const PROP_SCHEMA = {
 
 /** Prop names grouped by category. */
 export const CONFIGURABLE_PROPS_BY_GROUP = {
-  general: ['identifier',],
+  general: ['identifier', 'title'],
   title: [
-    'title',
     'showTitle',
     'titleFontColor',
     'titleFontFamily',
@@ -178,21 +145,9 @@ export const CONFIGURABLE_PROPS_BY_GROUP = {
     'titleVerticalAlignment',
     'titleHorizontalAlignment',
   ],
-  data: ['labels', 'values', 'barColor'],
+  data: ['labels', 'values', 'colors'],
   legend: ['legendDisplay', 'legendPosition', 'legendFontColor', 'legendFontFamily', 'legendFontSize'],
-  chart: [
-    'barBorderWidth',
-    'barBorderColor',
-    'indexAxis',
-    'barPercentage',
-    'categoryPercentage',
-    'yBeginAtZero',
-    'yTicksShowAsThousands',
-    'tooltipsEnabled',
-    'fillCell',
-    'verticalAlignment',
-    'maintainAspectRatio',
-  ],
+  chart: ['sliceBorderWidth', 'sliceBorderColor', 'fillCell', 'verticalAlignment', 'maintainAspectRatio', 'tooltipsEnabled'],
   card: [
     'backgroundColor',
     'borderLeftColor',
@@ -205,7 +160,7 @@ export const CONFIGURABLE_PROPS_BY_GROUP = {
 
 /** Builds property schema for PropertyGridWidget from widget props. */
 export function buildPropertySchema(props = {}) {
-  const displayLabel = props.identifier || props.title || 'Bar Chart'
+  const displayLabel = props.identifier || props.title || 'Doughnut Chart'
   const children = Object.entries(CONFIGURABLE_PROPS_BY_GROUP).map(([groupName, keys]) => ({
     label: groupName.charAt(0).toUpperCase() + groupName.slice(1),
     children: keys
@@ -231,7 +186,7 @@ export function buildPropertySchema(props = {}) {
   }))
 
   return {
-    label: `BarChart: ${displayLabel}`,
+    label: `DoughnutChart: ${displayLabel}`,
     children,
   }
 }
@@ -239,33 +194,33 @@ export function buildPropertySchema(props = {}) {
 
 <script setup>
 import { computed, inject } from 'vue'
-import { Bar } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
+import { Doughnut } from 'vue-chartjs'
+import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from 'chart.js'
 
-ChartJS.register(Title, Tooltip, Legend, CategoryScale, LinearScale, BarElement)
+ChartJS.register(Title, Tooltip, Legend, ArcElement)
 
 const props = defineProps({
   openPropertyEditor: { type: Function, default: null },
 
   identifier: { type: String, default: '' },
 
-  title: { type: String, default: 'Bar Chart' },
-  showTitle: { type: [Boolean, String], default: true },
+  title: { type: String, default: 'Doughnut Chart' },
   titleFontColor: { type: String, default: '#6c757d' },
   titleFontFamily: { type: String, default: 'inherit' },
   titleFontSize: {
     type: [Number, String],
     default: 14,
   },
+  showTitle: { type: [Boolean, String], default: true },
   titleVerticalAlignment: {
     type: String,
-    default: 'Top',
-    validator: (v) => ['Top', 'Bottom'].includes(v),
+    default: 'top',
+    validator: (v) => ['top', 'bottom'].includes(v),
   },
   titleHorizontalAlignment: {
     type: String,
-    default: 'Center',
-    validator: (v) => ['Left', 'Center', 'Right'].includes(v),
+    default: 'center',
+    validator: (v) => ['left', 'center', 'right'].includes(v),
   },
 
   backgroundColor: { type: String, default: '' },
@@ -275,24 +230,22 @@ const props = defineProps({
   borderBottomColor: { type: String, default: '' },
   cardPaddingAll: { type: [Number, String], default: 0.5 },
 
-  // Bar‑chart specific props
-  labels: { type: String, default: 'Jan,Feb,Mar' },
-  values: { type: String, default: '10,20,30' },
-  barColor: { type: String, default: '#0d6efd' },
+  labels: { type: String, default: 'A,B,C' },
+  values: { type: String, default: '40,30,30' },
+  colors: { type: String, default: '#0d6efd,#6c757d,#198754' },
 
-  barBorderWidth: { type: [Number, String], default: 0 },
-  barBorderColor: { type: String, default: '' },
-  indexAxis: { type: String, default: 'x' },
-  barPercentage: { type: [Number, String], default: 0.9 },
-  categoryPercentage: { type: [Number, String], default: 0.8 },
-  yBeginAtZero: { type: [Boolean, String], default: true },
-  yTicksShowAsThousands: { type: [Boolean, String], default: false },
-  fillCell: { type: [Boolean, String], default: false },
-  verticalAlignment: { type: String, default: 'Center' },
+  sliceBorderWidth: { type: [Number, String], default: 0 },
+  sliceBorderColor: { type: String, default: '' },
+  fillCell: { type: [Boolean, String], default: true },
+  verticalAlignment: {
+    type: String,
+    default: 'center',
+    validator: (v) => ['top', 'center', 'bottom'].includes(v),
+  },
   maintainAspectRatio: { type: [Boolean, String], default: false },
 
   legendDisplay: { type: [Boolean, String], default: true },
-  legendPosition: { type: String, default: 'Top' },
+  legendPosition: { type: String, default: 'bottom' },
   legendFontColor: { type: String, default: '#6c757d' },
   legendFontFamily: { type: String, default: 'inherit' },
   legendFontSize: { type: [Number, String], default: 12 },
@@ -330,9 +283,9 @@ const titleStyle = computed(() => {
 
   s.fontSize = `${asNumber(props.titleFontSize, 14)}px`
 
-  if (props.titleHorizontalAlignment === 'Left') s.textAlign = 'Left'
-  else if (props.titleHorizontalAlignment === 'Right') s.textAlign = 'Right'
-  else s.textAlign = 'Center'
+  if (props.titleHorizontalAlignment === 'left') s.textAlign = 'left'
+  else if (props.titleHorizontalAlignment === 'right') s.textAlign = 'right'
+  else s.textAlign = 'center'
 
   s.width = '100%'
 
@@ -340,7 +293,7 @@ const titleStyle = computed(() => {
 })
 
 const selfAlignmentStyle = computed(() => ({
-  alignSelf: 'Center',
+  alignSelf: 'center',
   marginLeft: 'auto',
   marginRight: 'auto',
   width: '100%',
@@ -349,14 +302,14 @@ const selfAlignmentStyle = computed(() => ({
 }))
 
 const contentAlignmentStyle = computed(() => {
-  const vertical = props.verticalAlignment || 'Center'
-  let justifyContent = 'Center'
-  if (vertical === 'Top') justifyContent = 'flex-start'
-  else if (vertical === 'Bottom') justifyContent = 'flex-end'
+  const vertical = props.verticalAlignment || 'center'
+  let justifyContent = 'center'
+  if (vertical === 'top') justifyContent = 'flex-start'
+  else if (vertical === 'bottom') justifyContent = 'flex-end'
 
   return {
     justifyContent,
-    alignItems: 'Center',
+    alignItems: 'center',
     width: '100%',
     height: '100%',
     minHeight: 0,
@@ -394,8 +347,15 @@ const parsedValues = computed(() =>
     .filter((n) => !Number.isNaN(n)),
 )
 
+const parsedColors = computed(() =>
+  String(props.colors || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+)
+
 const showTitleBool = computed(() => asBool(props.showTitle, true))
-const maintainAspectRatioValue = computed(() => asBool(props.maintainAspectRatio, true))
+const maintainAspectRatioValue = computed(() => asBool(props.maintainAspectRatio, false))
 const fillCellBool = computed(() => asBool(props.fillCell, false))
 const legendFontSizeKey = computed(() => asNumber(props.legendFontSize, 12))
 
@@ -426,44 +386,30 @@ const chartData = computed(() => {
     return { labels: [], datasets: [] }
   }
   const dataValues = values.length === labels.length ? values : labels.map((_, i) => values[i] ?? 0)
+  const colors = parsedColors.value
+  const bgColors = dataValues.map((_, i) => colors[i] || '#0d6efd')
 
   return {
     labels,
     datasets: [
       {
         data: dataValues,
-        backgroundColor: props.barColor || '#0d6efd',
-        borderWidth: asNumber(props.barBorderWidth, 0),
-        borderColor: props.barBorderColor || undefined,
-        barPercentage: asNumber(props.barPercentage, 0.9),
-        categoryPercentage: asNumber(props.categoryPercentage, 0.8),
+        backgroundColor: bgColors,
+        borderWidth: asNumber(props.sliceBorderWidth, 0),
+        borderColor: props.sliceBorderColor || undefined,
       },
     ],
   }
 })
 
 const chartOptions = computed(() => ({
-  indexAxis: props.indexAxis || 'x',
   responsive: true,
   maintainAspectRatio: maintainAspectRatioValue.value,
-  scales: {
-    y: {
-      beginAtZero: asBool(props.yBeginAtZero, true),
-      ticks: {
-        callback: (value) => {
-          const useThousands = asBool(props.yTicksShowAsThousands, false)
-          if (!useThousands) return value
-          const num = typeof value === 'number' ? value : Number(value)
-          if (Number.isNaN(num)) return value
-          return `${num / 1000}k`
-        },
-      },
-    },
-  },
+  maintainAspectRatio: asBool(props.maintainAspectRatio, false),
   plugins: {
     legend: {
       display: asBool(props.legendDisplay, true),
-      position: props.legendPosition || 'Top',
+      position: props.legendPosition || 'bottom',
       labels: {
         color: props.legendFontColor || undefined,
         font: {
@@ -489,9 +435,9 @@ const chartOptions = computed(() => ({
     @click="onClick"
     @keydown="onKeydown"
   >
-      <div class="card-body d-flex flex-column" :style="contentAlignmentStyle">
+    <div class="card-body d-flex flex-column" :style="contentAlignmentStyle">
         <div
-          v-if="showTitleBool && title && titleVerticalAlignment === 'Top'"
+          v-if="showTitleBool && title && titleVerticalAlignment === 'top'"
           class="mb-2"
           :class="titleClass"
           :style="titleStyle"
@@ -500,7 +446,7 @@ const chartOptions = computed(() => ({
       </div>
 
         <div class="chart-wrap" :class="{ 'flex-grow-1': fillCellBool }" :style="selfAlignmentStyle">
-        <Bar
+        <Doughnut
           :data="chartData"
           :options="chartOptions"
           :key="`${maintainAspectRatioValue ? 'ma-1' : 'ma-0'}-lfs-${legendFontSizeKey}`"
@@ -508,7 +454,7 @@ const chartOptions = computed(() => ({
       </div>
 
         <div
-          v-if="showTitleBool && title && titleVerticalAlignment === 'Bottom'"
+          v-if="showTitleBool && title && titleVerticalAlignment === 'bottom'"
           class="mt-2"
           :class="titleClass"
           :style="titleStyle"
@@ -529,3 +475,4 @@ const chartOptions = computed(() => ({
   max-height: 100%;
 }
 </style>
+

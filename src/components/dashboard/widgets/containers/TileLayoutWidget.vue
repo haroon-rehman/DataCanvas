@@ -5,6 +5,11 @@ import { widgetMeta as iconValueWidgetMeta } from "../metrics/IconValueWidget.vu
 import { widgetMeta as valueWidgetMeta } from "../metrics/ValueWidget.vue";
 import { widgetMeta as pieChartWidgetMeta } from "../metrics/PieChartWidget.vue";
 import { widgetMeta as barChartWidgetMeta } from "../metrics/BarChartWidget.vue";
+import { widgetMeta as radarChartWidgetMeta } from "../metrics/RadarChartWidget.vue";
+import { widgetMeta as doughnutChartWidgetMeta } from "../metrics/DoughnutChartWidget.vue";
+import { widgetMeta as lineChartWidgetMeta } from "../metrics/LineChartWidget.vue";
+import { widgetMeta as polarAreaChartWidgetMeta } from "../metrics/PolarAreaChartWidget.vue";
+import { widgetMeta as scatterChartWidgetMeta } from "../metrics/ScatterChartWidget.vue";
 import { widgetMeta as gridLayoutWidgetMeta } from "./GridLayoutWidget.vue";
 import { generateWidgetIdentifier } from "../../_internals/widgetIdentifierCounter.js";
 import {
@@ -25,9 +30,14 @@ const WIDGET_REGISTRY = [
   { type: "IconValueWidget", ...iconValueWidgetMeta },
   { type: "PieChartWidget", ...pieChartWidgetMeta },
   { type: "BarChartWidget", ...barChartWidgetMeta },
+  { type: "RadarChartWidget", ...radarChartWidgetMeta },
   { type: "GridLayoutWidget", ...gridLayoutWidgetMeta },
   { type: "TileLayoutWidget", ...widgetMeta },
   { type: "ValueWidget", ...valueWidgetMeta },
+  { type: "DoughnutChartWidget", ...doughnutChartWidgetMeta },
+  { type: "LineChartWidget", ...lineChartWidgetMeta },
+  { type: "PolarAreaChartWidget", ...polarAreaChartWidgetMeta },
+  { type: "ScatterChartWidget", ...scatterChartWidgetMeta },
 ];
 
 /** Widgets grouped by meta.group for the accordion (array of { groupName, widgets }). */
@@ -218,10 +228,11 @@ function getWidgetProps(col, row, rowIndex, colIndex) {
       ...baseProps,
       widgets: cellProps.widgets ?? [],
       updateWidget: () => {},
+      updateGridOptions: updateWidgetProps,
       gridOptions: mergedGridOptions,
       widgetComponents: resolvedContentWidgetComponents.value,
       gridDefaultsByType: props.gridDefaultsByType,
-      sizeMode: "auto",
+      sizeMode: cellProps.sizeMode ?? "computed",
       backgroundColor: cellProps.backgroundColor ?? "",
       foregroundColor: cellProps.foregroundColor ?? "",
       editMode: editMode.value,

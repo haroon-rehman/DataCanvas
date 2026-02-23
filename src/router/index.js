@@ -15,24 +15,29 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     {
-      path: '/dashboard-example',
-      name: 'dashboard-example',
-      component: () => import('../views/DashboardExampleView.vue'),
+      path: '/dashboards',
+      name: 'dashboards',
+      component: () => import('../views/dashboard/DashboardListView.vue'),
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('../views/dashboard/DashboardView.vue'),
+    },
+    {
+      path: '/tile-layouts',
+      name: 'tile-layouts',
+      component: () => import('../views/tileLayout/TileLayoutListView.vue'),
     },
     {
       path: '/tile-layout',
       name: 'tile-layout',
-      component: () => import('../views/TileLayoutView.vue'),
+      component: () => import('../views/tileLayout/TileLayoutView.vue'),
     },
     {
       path: '/grid',
       name: 'grid',
       redirect: { name: 'tile-layout' },
-    },
-    {
-      path: '/grid-layout-example',
-      name: 'grid-layout-example',
-      component: () => import('../views/GridLayoutExampleView.vue'),
     },
   ],
 })

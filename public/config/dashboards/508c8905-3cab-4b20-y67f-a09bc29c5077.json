@@ -1,0 +1,33 @@
+{
+  "id": "508c8905-3cab-4b20-y67f-a09bc29c5077",
+  "label": "Test Dash2",
+  "description": "fghfgh",
+  "created": "2026-02-23T00:36:54.337Z",
+  "updated": "2026-02-23T01:07:03.682Z",
+  "widgets": [
+    {
+      "type": "IconValueWidget",
+      "x": 0,
+      "y": 0,
+      "w": 2,
+      "h": 6,
+      "minW": 1,
+      "minH": 2,
+      "value": "77",
+      "valueHorizontalAlignment": "center",
+      "iconHorizontalAlignment": "center",
+      "labelHorizontalAlignment": "center",
+      "label": "Temp",
+      "labelFontSize": "fs-5"
+    }
+  ],
+  "gridOptions": {
+    "column": 2,
+    "maxColumn": 2,
+    "row": 6,
+    "cellHeight": "70px",
+    "cellWidth": "120px",
+    "sizeMode": "computed",
+    "margin": 5
+  }
+}
