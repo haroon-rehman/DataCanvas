@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, provide, watch } from "vue";
 import { useRoute } from "vue-router";
-import GridLayoutWidget from "../../components/dashboard/widgets/containers/GridLayoutWidget.vue";
+import GridLayoutWidget, {
+  buildPropertySchema as buildGridLayoutPropertySchema,
+} from "../../components/dashboard/widgets/containers/GridLayoutWidget.vue";
+import { normalizeColorValue } from "../../utils/colorUtils.js";
 import PropertyGridWidget from "../../components/dashboard/_internals/PropertyGridWidget.vue";
 import WidgetsSelectorWidget from "../../components/dashboard/_internals/WidgetsSelectorWidget.vue";
 import SaveTileLayoutOffcanvas from "../../components/dashboard/_internals/SaveTileLayoutOffcanvas.vue";
@@ -12,12 +15,13 @@ const editMode = computed(() => route.query.edit === "1");
 
 const defaultGridOptions = {
   column: 12,
-  maxColumn: 3,
   row: 6,
-  cellHeight: "70px",
-  cellWidth: "120px",
-  sizeMode: "computed",
+  cellHeightPx: 70,
+  cellWidthPx: 120,
+  sizeMode: "Computed",
   margin: 5,
+  backgroundColor: "#F8F9FA",
+  foregroundColor: "#212529",
 };
 
 const showPropertyEditor = ref(false);
@@ -82,7 +86,10 @@ const showNewDashboardConfig = ref(false);
 function createWidgetId() {
   try {
     // browsers only; ok to fall back if unavailable
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
       return crypto.randomUUID();
     }
   } catch {
@@ -120,7 +127,15 @@ async function loadDashboardById(id) {
     const data = await res.json();
     if (!Array.isArray(data.widgets)) throw new Error("Invalid dashboard file");
     widgets.value = ensureWidgetIds(data.widgets);
-    gridOptions.value = { ...defaultGridOptions, ...(data.gridOptions || {}) };
+    const loaded = { ...defaultGridOptions, ...(data.gridOptions || {}) };
+    delete loaded.maxColumn;
+    if (loaded.sizeMode === "computed") loaded.sizeMode = "Computed";
+    if (loaded.sizeMode === "auto") loaded.sizeMode = "Auto";
+    if (loaded.backgroundColor)
+      loaded.backgroundColor = normalizeColorValue(loaded.backgroundColor) ?? loaded.backgroundColor;
+    if (loaded.foregroundColor)
+      loaded.foregroundColor = normalizeColorValue(loaded.foregroundColor) ?? loaded.foregroundColor;
+    gridOptions.value = loaded;
     currentDashboardMeta.value = {
       id: data.id || id,
       label: data.label || id,
@@ -153,7 +168,9 @@ function resetToDefault() {
 }
 
 function handleNewDashboardConfigConfirm(config) {
-  gridOptions.value = { ...defaultGridOptions, ...config };
+  const merged = { ...defaultGridOptions, ...config };
+  delete merged.maxColumn;
+  gridOptions.value = merged;
   showNewDashboardConfig.value = false;
 }
 
@@ -176,13 +193,43 @@ function closeSaveDashboard() {
   showSaveDashboard.value = false;
 }
 
+/** gridOptions for save — exclude maxColumn; normalize to cellHeightPx/cellWidthPx; strip removed props; normalize colors; ensure numeric types. */
+function getGridOptionsForSave() {
+  const opts = { ...gridOptions.value };
+  delete opts.maxColumn;
+  if (opts.column != null) opts.column = Number(opts.column) || defaultGridOptions.column;
+  if (opts.row != null) opts.row = Number(opts.row) || defaultGridOptions.row;
+  if (opts.cellHeightPx != null) opts.cellHeightPx = Number(opts.cellHeightPx) || defaultGridOptions.cellHeightPx;
+  if (opts.cellWidthPx != null) opts.cellWidthPx = Number(opts.cellWidthPx) || defaultGridOptions.cellWidthPx;
+  if (opts.backgroundColor)
+    opts.backgroundColor = normalizeColorValue(opts.backgroundColor) ?? opts.backgroundColor;
+  if (opts.foregroundColor)
+    opts.foregroundColor = normalizeColorValue(opts.foregroundColor) ?? opts.foregroundColor;
+  if (opts.cellHeightPx == null && opts.cellHeight != null) {
+    opts.cellHeightPx =
+      parseCellSize(opts.cellHeight) ?? defaultGridOptions.cellHeightPx;
+  }
+  if (opts.cellWidthPx == null && opts.cellWidth != null) {
+    opts.cellWidthPx =
+      parseCellSize(opts.cellWidth) ?? defaultGridOptions.cellWidthPx;
+  }
+  delete opts.cellHeight;
+  delete opts.cellWidth;
+  delete opts.contentHorizontalAlignment;
+  delete opts.contentVerticalAlignment;
+  delete opts.dock;
+  delete opts.horizontalAlignment;
+  delete opts.verticalAlignment;
+  return opts;
+}
+
 function getDashboardPayload() {
   return {
     id: currentDashboardMeta.value?.id,
     label: currentDashboardMeta.value?.label,
     description: currentDashboardMeta.value?.description,
     widgets: widgets.value,
-    gridOptions: gridOptions.value,
+    gridOptions: getGridOptionsForSave(),
   };
 }
 
@@ -206,84 +253,66 @@ function downloadDashboardAsFile(payload) {
   a.click();
   URL.revokeObjectURL(a.href);
 }
+function parseCellSize(val) {
+  if (val == null) return null;
+  if (typeof val === "number") return val;
+  const match = String(val).match(/^([\d.]+)\s*px$/i);
+  return match ? Number(match[1]) : null;
+}
+
 function getDashboardSettingsSchema() {
   const meta = currentDashboardMeta.value;
   const opts = gridOptions.value;
-  return {
-    label: "Dashboard settings",
-    children: [
-      {
-        label: "Identity",
-        children: [
-          { key: "id", label: "Id", value: meta?.id ?? "", control: "text" },
-          { key: "label", label: "Label", value: meta?.label ?? "", control: "text" },
-          {
-            key: "description",
-            label: "Description",
-            value: meta?.description ?? "",
-            control: "text",
-          },
-        ],
-      },
-      {
-        label: "Grid",
-        children: [
-          {
-            key: "column",
-            label: "Columns",
-            value: opts?.column ?? defaultGridOptions.column,
-            control: "number",
-            min: 1,
-            max: 12,
-          },
-          {
-            key: "row",
-            label: "Rows",
-            value: opts?.row ?? defaultGridOptions.row,
-            control: "number",
-            min: 1,
-            max: 12,
-          },
-          {
-            key: "cellHeight",
-            label: "Cell height",
-            value: opts?.cellHeight ?? defaultGridOptions.cellHeight,
-            control: "text",
-          },
-          {
-            key: "cellWidth",
-            label: "Cell width",
-            value: opts?.cellWidth ?? defaultGridOptions.cellWidth,
-            control: "text",
-          },
-          {
-            key: "sizeMode",
-            label: "Size mode",
-            value: opts?.sizeMode ?? defaultGridOptions.sizeMode ?? "computed",
-            control: "select",
-            options: ["computed", "auto"],
-          },
-        ],
-      },
-    ],
+  const merged = {
+    identifier: meta?.id ?? "",
+    label: meta?.label ?? "",
+    description: meta?.description ?? "",
+    rows: opts?.row ?? defaultGridOptions.row,
+    columns: opts?.column ?? defaultGridOptions.column,
+    cellHeightPx:
+      opts?.cellHeightPx ??
+      parseCellSize(opts?.cellHeight) ??
+      defaultGridOptions.cellHeightPx,
+    cellWidthPx:
+      opts?.cellWidthPx ??
+      parseCellSize(opts?.cellWidth) ??
+      defaultGridOptions.cellWidthPx,
+    sizeMode: opts?.sizeMode ?? defaultGridOptions.sizeMode ?? "Computed",
+    backgroundColor:
+      opts?.backgroundColor ?? defaultGridOptions.backgroundColor,
+    foregroundColor:
+      opts?.foregroundColor ?? defaultGridOptions.foregroundColor,
   };
+  const gridLayoutSchema = buildGridLayoutPropertySchema(merged);
+  return gridLayoutSchema;
 }
 
 function handleSettings() {
   const schema = getDashboardSettingsSchema();
   openPropertyEditor(schema, {
     update(key, value) {
-      if (["id", "label", "description"].includes(key)) {
+      if (["identifier", "label", "description"].includes(key)) {
         if (!currentDashboardMeta.value) {
           currentDashboardMeta.value = { id: "", label: "", description: "" };
         }
+        const metaKey = key === "identifier" ? "id" : key;
         currentDashboardMeta.value = {
           ...currentDashboardMeta.value,
-          [key]: value,
+          [metaKey]: value,
         };
       } else {
-        const gridKey = key === "rows" ? "row" : key === "columns" ? "column" : key;
-        gridOptions.value = { ...gridOptions.value, [gridKey]: value };
+        const gridKey =
+          key === "rows" ? "row" : key === "columns" ? "column" : key;
+        let v = value;
+        if (gridKey === "backgroundColor" || gridKey === "foregroundColor") {
+          v = normalizeColorValue(value) ?? value;
+        } else if (
+          ["row", "column", "cellHeightPx", "cellWidthPx"].includes(gridKey)
+        ) {
+          const n = Number(value);
+          v = Number.isNaN(n) ? value : n;
+        }
+        gridOptions.value = { ...gridOptions.value, [gridKey]: v };
       }
     },
   });
@@ -297,7 +326,7 @@ async function handleSaveDirect() {
     label: meta.label,
     description: meta.description,
     widgets: widgets.value,
-    gridOptions: gridOptions.value,
+    gridOptions: getGridOptionsForSave(),
   };
   await handleSaveDashboard(payload);
 }
@@ -348,10 +377,15 @@ function importJSON() {
     .then((text) => {
       const data = JSON.parse(text);
       widgets.value = ensureWidgetIds(data.widgets || []);
-      gridOptions.value = {
-        ...defaultGridOptions,
-        ...(data.gridOptions || {}),
-      };
+      const imported = { ...defaultGridOptions, ...(data.gridOptions || {}) };
+      delete imported.maxColumn;
+      if (imported.sizeMode === "computed") imported.sizeMode = "Computed";
+      if (imported.sizeMode === "auto") imported.sizeMode = "Auto";
+      if (imported.backgroundColor)
+        imported.backgroundColor = normalizeColorValue(imported.backgroundColor) ?? imported.backgroundColor;
+      if (imported.foregroundColor)
+        imported.foregroundColor = normalizeColorValue(imported.foregroundColor) ?? imported.foregroundColor;
+      gridOptions.value = imported;
       alert("JSON imported!");
     })
     .catch((err) => {
@@ -360,10 +394,10 @@ function importJSON() {
     });
 }
 
-/** Payload for SaveTileLayoutOffcanvas — layout holds { widgets, gridOptions } */
+/** Payload for SaveTileLayoutOffcanvas — layout holds { widgets, gridOptions } (maxColumn excluded). */
 const dashboardSavePayload = computed(() => ({
   widgets: widgets.value,
-  gridOptions: gridOptions.value,
+  gridOptions: getGridOptionsForSave(),
 }));
 </script>
 
@@ -466,15 +500,16 @@ const dashboardSavePayload = computed(() => ({
         :widgets="widgets"
         @update:widgets="widgets = ensureWidgetIds($event)"
         :grid-options="gridOptions"
-        :size-mode="gridOptions.sizeMode ?? 'computed'"
+        :size-mode="gridOptions.sizeMode ?? 'Computed'"
         :update-grid-options="
           (k, v) => {
             const key = k === 'rows' ? 'row' : k === 'columns' ? 'column' : k;
             gridOptions.value = { ...gridOptions.value, [key]: v };
           }
         "
-        background-color="#f8f9fa"
-        foreground-color="#212529"
+        :background-color="gridOptions.backgroundColor ?? '#F8F9FA'"
+        :foreground-color="gridOptions.foregroundColor ?? '#212529'"
+        :identifier="currentDashboardMeta?.label ?? ''"
         :edit-mode="editMode"
       />
     </div>
@@ -513,9 +548,9 @@ const dashboardSavePayload = computed(() => ({
       :show="showNewDashboardConfig"
       :default-column="defaultGridOptions.column"
       :default-row="defaultGridOptions.row"
-      :default-cell-height="defaultGridOptions.cellHeight"
-      :default-cell-width="defaultGridOptions.cellWidth"
-      :default-size-mode="defaultGridOptions.sizeMode ?? 'computed'"
+      :default-cell-height-px="defaultGridOptions.cellHeightPx ?? 70"
+      :default-cell-width-px="defaultGridOptions.cellWidthPx ?? 120"
+      :default-size-mode="defaultGridOptions.sizeMode ?? 'Computed'"
       @close="handleNewDashboardConfigClose"
       @confirm="handleNewDashboardConfigConfirm"
     />

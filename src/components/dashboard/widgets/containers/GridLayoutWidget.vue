@@ -64,103 +64,73 @@ export const PROP_SCHEMA = {
     control: "text",
     label: "Identifier",
   },
+  label: {
+    type: "string",
+    default: "",
+    control: "text",
+    label: "Label",
+  },
+  description: {
+    type: "string",
+    default: "",
+    control: "text",
+    label: "Description",
+  },
   rows: {
     type: "number",
     default: 12,
     control: "number",
-    label: "Number of rows",
+    label: "Row Count",
   },
   columns: {
     type: "number",
     default: 12,
     control: "number",
-    label: "Number of columns",
+    label: "Column Count",
   },
-  cellHeight: {
-    type: "string",
-    default: "70px",
-    control: "text",
-    label: "Cell height",
+  cellHeightPx: {
+    type: "number",
+    default: 70,
+    control: "number",
+    label: "Cell Height (px)",
   },
-  cellWidth: {
-    type: "string",
-    default: "120px",
-    control: "text",
-    label: "Cell width",
+  cellWidthPx: {
+    type: "number",
+    default: 120,
+    control: "number",
+    label: "Cell Width (px)",
   },
   sizeMode: {
     type: "string",
-    default: "computed",
+    default: "Computed",
     control: "select",
-    options: ["auto", "computed"],
-    label: "Size mode",
+    options: ["Auto", "Computed"],
+    label: "Size Mode",
   },
   backgroundColor: {
     type: "string",
     default: "",
     control: "colorBoth",
-    label: "Background color",
+    label: "Background Colour",
   },
   foregroundColor: {
     type: "string",
     default: "",
     control: "colorPure",
-    label: "Foreground color",
-  },
-  horizontalAlignment: {
-    type: "string",
-    default: "center",
-    control: "select",
-    options: ["start", "center", "end"],
-    label: "Horizontal alignment",
-  },
-  verticalAlignment: {
-    type: "string",
-    default: "start",
-    control: "select",
-    options: ["start", "center", "end"],
-    label: "Vertical alignment",
-  },
-  contentHorizontalAlignment: {
-    type: "string",
-    default: "start",
-    control: "select",
-    options: ["start", "center", "end"],
-    label: "Content horizontal alignment",
-  },
-  contentVerticalAlignment: {
-    type: "string",
-    default: "start",
-    control: "select",
-    options: ["start", "center", "end"],
-    label: "Content vertical alignment",
-  },
-  dock: {
-    type: "string",
-    default: "none",
-    control: "select",
-    options: ["none", "top", "left", "right", "bottom", "fill"],
-    label: "Dock",
+    label: "Foreground Colour",
   },
 };
 
 /** Prop names grouped by category. */
 const CONFIGURABLE_PROPS_BY_GROUP = {
-  general: ["identifier"],
-  docking: ["dock"],
-  grid: ["rows", "columns", "cellHeight", "cellWidth", "sizeMode"],
+  general: ["label", "description"],
+  grid: ["rows", "columns", "cellHeightPx", "cellWidthPx", "sizeMode"],
   appearance: ["backgroundColor", "foregroundColor"],
-  alignment: [
-    "horizontalAlignment",
-    "verticalAlignment",
-    "contentHorizontalAlignment",
-    "contentVerticalAlignment",
-  ],
 };
 
 /** Builds property schema for PropertyGridWidget from widget props. */
 export function buildPropertySchema(props = {}) {
-  const displayLabel = props.identifier || "GridLayout";
+  const displayLabel = "Dashboard Settings";
   const children = Object.entries(CONFIGURABLE_PROPS_BY_GROUP).map(
     ([groupName, keys]) => ({
       label: groupName.charAt(0).toUpperCase() + groupName.slice(1),
@@ -187,7 +157,7 @@ export function buildPropertySchema(props = {}) {
     }),
   );
   return {
-    label: `GridLayout: ${displayLabel}`,
+    label: displayLabel,
     children,
   };
 }
@@ -292,37 +262,11 @@ const props = defineProps({
   },
   sizeMode: {
     type: String,
-    default: "computed",
-    validator: (v) => ["auto", "computed"].includes(v),
+    default: "Computed",
+    validator: (v) => ["Auto", "Computed"].includes(v),
   },
   backgroundColor: { type: String, default: "" },
   foregroundColor: { type: String, default: "" },
-  horizontalAlignment: {
-    type: String,
-    default: "center",
-    validator: (v) => ["start", "center", "end"].includes(v),
-  },
-  verticalAlignment: {
-    type: String,
-    default: "start",
-    validator: (v) => ["start", "center", "end"].includes(v),
-  },
-  contentHorizontalAlignment: {
-    type: String,
-    default: "start",
-    validator: (v) => ["start", "center", "end"].includes(v),
-  },
-  contentVerticalAlignment: {
-    type: String,
-    default: "start",
-    validator: (v) => ["start", "center", "end"].includes(v),
-  },
-  dock: {
-    type: String,
-    default: "none",
-    validator: (v) =>
-      ["none", "top", "left", "right", "bottom", "fill"].includes(v),
-  },
   /** Edit mode: shows grid overlay when true. */
   editMode: { type: Boolean, default: false },
 });
@@ -353,7 +297,7 @@ const contentWidgetComponents = computed(() => {
 
 const gridWidthPx = computed(() => {
   const col = props.gridOptions.column ?? 12;
-  const cellW = parseCellSize(props.gridOptions.cellWidth) ?? 120;
+  const cellW = getCellWidthPx(props.gridOptions);
   return col * cellW;
 });
 
@@ -364,9 +308,21 @@ function parseCellSize(val) {
   return match ? Number(match[1]) : null;
 }
 
+/** Get cell height in px; supports cellHeightPx (number) or legacy cellHeight ("75px"). */
+function getCellHeightPx(opts) {
+  if (opts?.cellHeightPx != null) return Number(opts.cellHeightPx);
+  return parseCellSize(opts?.cellHeight) ?? 80;
+}
+
+/** Get cell width in px; supports cellWidthPx (number) or legacy cellWidth ("140px"). */
+function getCellWidthPx(opts) {
+  if (opts?.cellWidthPx != null) return Number(opts.cellWidthPx);
+  return parseCellSize(opts?.cellWidth) ?? 120;
+}
+
 const gridContainerStyle = computed(() => {
   const rowCount = props.gridOptions.row;
-  const cellH = parseCellSize(props.gridOptions.cellHeight) ?? 80;
+  const cellH = getCellHeightPx(props.gridOptions);
   const margin =
     typeof props.gridOptions.margin === "number" ? props.gridOptions.margin : 5;
   const base = { overflow: "hidden" };
@@ -375,43 +331,51 @@ const gridContainerStyle = computed(() => {
   } else {
     base.height = "100vh";
   }
-  if (props.sizeMode === "auto") base.width = "100%";
+  if (props.sizeMode === "Auto") base.width = "100%";
   else base.width = gridWidthPx.value + "px";
   if (props.backgroundColor) base.backgroundColor = props.backgroundColor;
   if (props.foregroundColor) base.color = props.foregroundColor;
+  const fg =
+    props.foregroundColor?.trim() ||
+    props.gridOptions?.foregroundColor?.trim() ||
+    "";
+  let gridlineColor = "rgba(0, 0, 0, 0.15)";
+  if (fg.startsWith("#") && fg.length >= 4) {
+    const hex = fg.slice(1);
+    const r =
+      hex.length === 6
+        ? parseInt(hex.substr(0, 2), 16)
+        : parseInt(hex[0] + hex[0], 16);
+    const g =
+      hex.length === 6
+        ? parseInt(hex.substr(2, 2), 16)
+        : parseInt(hex[1] + hex[1], 16);
+    const b =
+      hex.length === 6
+        ? parseInt(hex.substr(4, 2), 16)
+        : parseInt(hex[2] + hex[2], 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b))
+      gridlineColor = `rgba(${r}, ${g}, ${b}, 0.15)`;
+  } else if (fg.startsWith("rgb")) {
+    const m = fg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (m) gridlineColor = `rgba(${m[1]}, ${m[2]}, ${m[3]}, 0.15)`;
+  }
+  base["--gridline-color"] = gridlineColor;
   return base;
 });
 
-const selfAlignmentStyle = computed(() => {
-  const alignSelf =
-    props.verticalAlignment === "start"
-      ? "flex-start"
-      : props.verticalAlignment === "end"
-        ? "flex-end"
-        : "center";
-  const margin =
-    props.horizontalAlignment === "start"
-      ? {}
-      : props.horizontalAlignment === "end"
-        ? { marginLeft: "auto" }
-        : { marginLeft: "auto", marginRight: "auto" };
-  return { alignSelf, ...margin, width: "100%", minWidth: 0 };
-});
+const selfAlignmentStyle = computed(() => ({
+  alignSelf: "flex-start",
+  marginLeft: "Auto",
+  marginRight: "Auto",
+  width: "100%",
+  minWidth: 0,
+}));
 
 const contentAlignmentWrapperStyle = computed(() => ({
   display: "flex",
-  justifyContent:
-    props.contentHorizontalAlignment === "start"
-      ? "flex-start"
-      : props.contentHorizontalAlignment === "end"
-        ? "flex-end"
-        : "center",
-  alignItems:
-    props.contentVerticalAlignment === "start"
-      ? "flex-start"
-      : props.contentVerticalAlignment === "end"
-        ? "flex-end"
-        : "center",
+  justifyContent: "flex-start",
+  alignItems: "flex-start",
   width: "100%",
   height: "100%",
   minHeight: "100%",
@@ -526,8 +490,8 @@ function updateSizeTooltips() {
   nextTick(() => {
     if (!gridEl.value || !grid) return;
     const opts = grid.opts;
-    const cellW = parseCellSize(opts.cellWidth);
-    const cellH = parseCellSize(opts.cellHeight);
+    const cellW = getCellWidthPx(opts);
+    const cellH = getCellHeightPx(opts);
     gridEl.value.querySelectorAll(".grid-stack-item").forEach((el) => {
       const node = el.gridstackNode;
       if (node && cellW != null && cellH != null)
@@ -544,7 +508,7 @@ function updateSizeTooltips() {
 function updateOverlaySize() {
   if (!overlayEl || !grid) return;
   const cols = grid.getColumn?.() ?? grid.opts?.column ?? 12;
-  const cellH = parseCellSize(grid.opts?.cellHeight) ?? 80;
+  const cellH = getCellHeightPx(grid.opts);
   const margin = typeof grid.opts?.margin === "number" ? grid.opts.margin : 5;
   const rowCount = grid.opts?.row;
 
@@ -587,7 +551,7 @@ function handleOverlayHover(e) {
     return;
   }
   const cols = grid.getColumn?.() ?? grid.opts?.column ?? 12;
-  const cellH = parseCellSize(grid.opts?.cellHeight) ?? 80;
+  const cellH = getCellHeightPx(grid.opts);
   const cellW = rect.width / cols;
   const col = Math.min(cols - 1, Math.floor(localX / cellW));
   const row = Math.floor(localY / cellH);
@@ -612,59 +576,15 @@ function handleOverlayLeave() {
 }
 
 function updateOverlayGridlineColor() {
-  if (!overlayEl || !isMounted.value) return;
-
+  if (!overlayEl) return;
   try {
-    // Convert foregroundColor to rgba with 0.05 opacity for gridlines
-    let finalColor = "rgba(0, 0, 0, 0.05)"; // Default
-
-    if (props.foregroundColor) {
-      const fgColor = props.foregroundColor.trim();
-
-      // Handle hex colors (#RRGGBB or #RGB)
-      if (fgColor.startsWith("#")) {
-        const hex = fgColor.slice(1);
-        if (hex.length === 6) {
-          const r = parseInt(hex.substr(0, 2), 16);
-          const g = parseInt(hex.substr(2, 2), 16);
-          const b = parseInt(hex.substr(4, 2), 16);
-          if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
-            finalColor = `rgba(${r}, ${g}, ${b}, 0.05)`;
-          }
-        } else if (hex.length === 3) {
-          const r = parseInt(hex[0] + hex[0], 16);
-          const g = parseInt(hex[1] + hex[1], 16);
-          const b = parseInt(hex[2] + hex[2], 16);
-          if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
-            finalColor = `rgba(${r}, ${g}, ${b}, 0.05)`;
-          }
-        }
-      }
-      // Handle rgb/rgba colors
-      else if (fgColor.startsWith("rgb")) {
-        const match = fgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (match) {
-          finalColor = `rgba(${match[1]}, ${match[2]}, ${match[3]}, 0.05)`;
-        }
-      }
-      // Handle named colors (fallback - try to use as-is with opacity)
-      else {
-        // For named colors, we'll use a CSS variable approach or default
-        // For now, use default since we can't easily convert named colors
-        finalColor = "rgba(0, 0, 0, 0.05)";
-      }
-    }
-
-    if (overlayEl) {
-      overlayEl.style.backgroundImage = `
-        linear-gradient(to right, ${finalColor} 1px, transparent 1px),
-        linear-gradient(to bottom, ${finalColor} 1px, transparent 1px)
-      `;
-    }
-
-    // Update border color for overlay wrapper if it exists
+    // Use CSS variable --gridline-color from parent (grid-stack) - set in gridContainerStyle
+    // Vue reactivity on gridContainerStyle ensures it updates when foregroundColor changes
+    const bgImage =
+      "linear-gradient(to right, var(--gridline-color) 1px, transparent 1px), linear-gradient(to bottom, var(--gridline-color) 1px, transparent 1px)";
+    overlayEl.style.setProperty("background-image", bgImage, "important");
     if (overlayWrapper) {
-      overlayWrapper.style.borderBottom = `1px solid ${finalColor}`;
+      overlayWrapper.style.borderBottom = "1px solid var(--gridline-color)";
     }
   } catch (error) {
     console.warn(
@@ -690,7 +610,10 @@ function syncGridToWidgets() {
     if (!node) return w;
     return { ...w, x: node.x, y: node.y, w: node.w, h: node.h };
   });
-  if (JSON.stringify(next.map((n) => [n.x, n.y, n.w, n.h])) !== JSON.stringify(current.map((n) => [n.x, n.y, n.w, n.h]))) {
+  if (
+    JSON.stringify(next.map((n) => [n.x, n.y, n.w, n.h])) !==
+    JSON.stringify(current.map((n) => [n.x, n.y, n.w, n.h]))
+  ) {
     emit("update:widgets", next);
   }
 }
@@ -706,14 +629,23 @@ function syncGridToWidgetsPositionsOnly() {
     if (!node) return w;
     return { ...w, x: node.x, y: node.y };
   });
-  if (JSON.stringify(next.map((n) => [n.x, n.y])) !== JSON.stringify(current.map((n) => [n.x, n.y]))) {
+  if (
+    JSON.stringify(next.map((n) => [n.x, n.y])) !==
+    JSON.stringify(current.map((n) => [n.x, n.y]))
+  ) {
     emit("update:widgets", next);
   }
 }
 
 /** Restore each grid node's w/h from props.widgets so display matches our data after column change (GridStack may have altered sizes). */
 function restoreNodeSizesFromWidgets() {
-  if (!grid?.engine?.nodes || !props.widgets?.length || !gridEl.value || typeof grid.update !== "function") return;
+  if (
+    !grid?.engine?.nodes ||
+    !props.widgets?.length ||
+    !gridEl.value ||
+    typeof grid.update !== "function"
+  )
+    return;
   const nodes = grid.engine.nodes;
   const current = props.widgets || [];
   const items = gridEl.value.querySelectorAll(".grid-stack-item");
@@ -736,7 +668,9 @@ function applyLayoutById(layout) {
   if (!Array.isArray(layout) || !layout.length) return;
   for (const item of layout) {
     if (!item?.id) continue;
-    const el = gridEl.value.querySelector(`.grid-stack-item[gs-id="${CSS?.escape ? CSS.escape(String(item.id)) : String(item.id)}"]`);
+    const el = gridEl.value.querySelector(
+      `.grid-stack-item[gs-id="${CSS?.escape ? CSS.escape(String(item.id)) : String(item.id)}"]`,
+    );
     if (!el) continue;
     grid.update(el, {
       x: item.x ?? 0,
@@ -756,16 +690,14 @@ onMounted(() => {
   if (!gridEl.value) return;
   const opts = {
     column: props.gridOptions?.column ?? 12,
-    maxColumn: props.gridOptions?.column ?? 12,
+    maxColumn: 12,
     row: props.gridOptions?.row ?? 12,
     maxRow: props.gridOptions?.row ?? 12,
-    cellHeight: "80px",
-    cellWidth: "120px",
     margin: 5,
     acceptWidgets: true,
     alwaysShowResizeHandle: props.editMode,
     disableResize: !props.editMode,
-    float: false,
+    float: true,
     draggable: {
       scroll: true,
       scrollSensitivity: 100,
@@ -777,6 +709,9 @@ onMounted(() => {
     },
     ...props.gridOptions,
   };
+  opts.maxColumn = 12;
+  opts.cellHeight = getCellHeightPx(opts);
+  opts.cellWidth = getCellWidthPx(opts);
   if (props.gridOptions?.row != null) opts.maxRow = opts.row;
   grid = GridStack.init(opts, gridEl.value);
   grid.updateOptions({
@@ -850,7 +785,7 @@ onMounted(() => {
   isMounted.value = true;
 
   // Watch for container resize (important for auto-width mode)
-  if (props.sizeMode === "auto" && ResizeObserver) {
+  if (props.sizeMode === "Auto" && ResizeObserver) {
     resizeObserver = new ResizeObserver(() => {
       if (props.editMode) {
         updateOverlaySize(); // Ensure overlay height stays clamped
@@ -913,9 +848,9 @@ function buildPropertySchemaFromProps() {
     ...props,
     rows: props.gridOptions?.row ?? props.rows ?? 12,
     columns: props.gridOptions?.column ?? props.columns ?? 12,
-    cellHeight: props.gridOptions?.cellHeight ?? props.cellHeight ?? "70px",
-    cellWidth: props.gridOptions?.cellWidth ?? props.cellWidth ?? "120px",
-    sizeMode: props.gridOptions?.sizeMode ?? props.sizeMode ?? "computed",
+    cellHeightPx: props.gridOptions?.cellHeightPx ?? props.cellHeightPx ?? 70,
+    cellWidthPx: props.gridOptions?.cellWidthPx ?? props.cellWidthPx ?? 120,
+    sizeMode: props.gridOptions?.sizeMode ?? props.sizeMode ?? "Computed",
   };
   return buildPropertySchema(merged);
 }
@@ -976,7 +911,7 @@ function handleGridDoubleClick(e) {
   if (localX < 0 || localY < 0 || localX >= rect.width || localY >= rect.height)
     return;
   const cols = grid?.getColumn?.() ?? grid?.opts?.column ?? 12;
-  const cellH = parseCellSize(grid?.opts?.cellHeight) ?? 80;
+  const cellH = getCellHeightPx(grid?.opts);
   const cellW = rect.width / cols;
   const col = Math.min(cols - 1, Math.max(0, Math.floor(localX / cellW)));
   const row = Math.floor(localY / cellH);
@@ -1015,11 +950,11 @@ watch(
   () => [
     props.gridOptions?.column,
     props.gridOptions?.row,
-    props.gridOptions?.cellHeight,
-    props.gridOptions?.cellWidth,
+    props.gridOptions?.cellHeightPx,
+    props.gridOptions?.cellWidthPx,
     props.gridOptions?.margin,
   ],
-  ([cols, rows, cellHeight, cellWidth, margin]) => {
+  ([cols, rows, cellHeightPx, cellWidthPx, margin]) => {
     if (!isMounted.value || !grid || !overlayEl) return;
 
     try {
@@ -1036,7 +971,7 @@ watch(
       if (cols != null && typeof grid.column === "function") {
         grid.column(cols, "none");
         if (typeof grid.maxColumn === "function") {
-          grid.maxColumn(cols);
+          grid.maxColumn(12);
         }
       }
       if (rows != null && grid.opts) {
@@ -1044,10 +979,10 @@ watch(
         grid.opts.maxRow = rows;
       }
       // Update cell dimensions so changes in property panel take effect
-      if (cellHeight != null || cellWidth != null) {
+      if (cellHeightPx != null || cellWidthPx != null) {
         const opts = {};
-        if (cellHeight != null) opts.cellHeight = cellHeight;
-        if (cellWidth != null) opts.cellWidth = cellWidth;
+        if (cellHeightPx != null) opts.cellHeight = cellHeightPx;
+        if (cellWidthPx != null) opts.cellWidth = cellWidthPx;
         if (
           Object.keys(opts).length &&
           typeof grid.updateOptions === "function"
@@ -1055,8 +990,8 @@ watch(
           grid.updateOptions(opts);
         }
         if (grid.opts) {
-          if (cellHeight != null) grid.opts.cellHeight = cellHeight;
-          if (cellWidth != null) grid.opts.cellWidth = cellWidth;
+          if (cellHeightPx != null) grid.opts.cellHeight = cellHeightPx;
+          if (cellWidthPx != null) grid.opts.cellWidth = cellWidthPx;
         }
       }
       nextTick(() => {
@@ -1077,22 +1012,8 @@ watch(
   { deep: true },
 );
 
-// Watch foregroundColor changes to update gridline color
-watch(
-  () => props.foregroundColor,
-  () => {
-    if (!isMounted.value || !overlayEl) return;
-    try {
-      nextTick(() => {
-        if (overlayEl) {
-          updateOverlayGridlineColor();
-        }
-      });
-    } catch (error) {
-      console.warn("GridLayoutWidget: Error updating gridline color:", error);
-    }
-  },
-);
+// Gridline color is driven by --gridline-color in gridContainerStyle (Vue reactivity).
+// updateOverlayGridlineColor sets background-image to use var(--gridline-color).
 </script>
 
 <template>
@@ -1163,9 +1084,7 @@ watch(
   right: 0;
   bottom: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  /* background-image set via JS from foregroundColor */
   opacity: 0;
   transition: opacity 0.18s ease;
 }

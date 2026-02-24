@@ -4,9 +4,9 @@
  * Used when a widget is selected: shows grouped rows (label/value + control type) and emits
  * updates. Expects propertySchema shape: { label?, children: [ { label, children: [ { key, label?, value, control?, options?, default? } ] } ] }.
  */
-import { computed, reactive, ref, watch } from 'vue'
-import Colorpicker from './ColorPicker.vue'
-import FontSelect from './FontSelect.vue'
+import { computed, reactive, ref, watch } from "vue";
+import Colorpicker from "./ColorPicker.vue";
+import FontSelect from "./FontSelect.vue";
 
 const props = defineProps({
   /** Whether the offcanvas is visible. */
@@ -15,16 +15,16 @@ const props = defineProps({
   propertySchema: { type: Object, default: null },
   /** Optional callback when a property value changes: (key, value) => void. */
   onPropertyChange: { type: Function, default: null },
-})
+});
 
-const emit = defineEmits(['close', 'update'])
+const emit = defineEmits(["close", "update"]);
 
 /** Flatten properties into a list of editable rows (one per leaf with key). Used to drive the grid. */
 function getEditableRows(data) {
-  if (!data?.children?.length) return []
-  const rows = []
+  if (!data?.children?.length) return [];
+  const rows = [];
   for (const group of data.children) {
-    if (!group.children?.length) continue
+    if (!group.children?.length) continue;
     for (const leaf of group.children) {
       if (leaf.key != null) {
         rows.push({
@@ -33,33 +33,33 @@ function getEditableRows(data) {
           label: leaf.label ?? leaf.key,
           value: leaf.value,
           type: leaf.type, // e.g. 'boolean', 'string', 'number'
-          control: leaf.control ?? 'text',
+          control: leaf.control ?? "text",
           options: leaf.options ?? null,
           default: leaf.default,
           min: leaf.min,
           max: leaf.max,
           step: leaf.step,
-        })
+        });
       }
     }
   }
-  return rows
+  return rows;
 }
 
 /** Display formatting for select option labels (without changing the underlying value). */
 function formatSelectOptionLabel(opt) {
-  if (opt == null || opt === '') return '(none)'
-  if (typeof opt !== 'string') return String(opt)
+  if (opt == null || opt === "") return "(none)";
+  if (typeof opt !== "string") return String(opt);
 
   // Only normalize the alignment words requested; do NOT title-case colors or other values.
   const map = {
-    top: 'Top',
-    bottom: 'Bottom',
-    center: 'Center',
-    left: 'Left',
-    right: 'Right',
-  }
-  return map[opt] ?? opt
+    top: "Top",
+    bottom: "Bottom",
+    center: "Center",
+    left: "Left",
+    right: "Right",
+  };
+  return map[opt] ?? opt;
 }
 
 /**
@@ -68,53 +68,67 @@ function formatSelectOptionLabel(opt) {
  * Important: keep as a real reactive ref (not computed) so row.value mutations (e.g. from ColorPicker)
  * immediately update the UI without needing propertySchema to be rebuilt upstream.
  */
-const editableRows = ref([])
+const editableRows = ref([]);
 watch(
   () => props.propertySchema,
   (schema) => {
-    editableRows.value = getEditableRows(schema).map((r) => reactive(r))
+    editableRows.value = getEditableRows(schema).map((r) => reactive(r));
   },
   { immediate: true, deep: true },
-)
+);
 
 /** Rows grouped by groupLabel for collapsible sections in the template. */
 const groupedRows = computed(() => {
-  const groups = []
-  let currentGroup = null
+  const groups = [];
+  let currentGroup = null;
   for (const row of editableRows.value) {
     if (!currentGroup || currentGroup.label !== row.groupLabel) {
-      currentGroup = { label: row.groupLabel, rows: [] }
-      groups.push(currentGroup)
+      currentGroup = { label: row.groupLabel, rows: [] };
+      groups.push(currentGroup);
     }
-    currentGroup.rows.push(row)
+    currentGroup.rows.push(row);
   }
-  return groups
-})
+  return groups;
+});
+
+import { normalizeColorValue } from "../../../utils/colorUtils.js";
+
+/** Format color for display: hex → uppercase, color names → title case, gradients unchanged. */
+function formatColorForDisplay(value) {
+  return value != null && value !== "" ? normalizeColorValue(value) : "";
+}
 
 /** Called when any control changes: update row for local display, call onPropertyChange, and emit. */
 function handleInput(row, newValue) {
-  row.value = newValue
+  let value = newValue;
+  if (row.control === "colorPure" || row.control === "colorBoth") {
+    value = normalizeColorValue(newValue) ?? newValue;
+  } else if (row.control === "number" || row.type === "number") {
+    const num = Number(newValue);
+    value = Number.isNaN(num) ? (row.default ?? 0) : num;
+  }
+  row.value = value;
   // Defensive: ensure DOM updates even if a row value comes from a non-proxied object reference.
-  editableRows.value = [...editableRows.value]
-  if (props.onPropertyChange) props.onPropertyChange(row.key, newValue)
-  emit('update', { key: row.key, value: newValue })
+  editableRows.value = [...editableRows.value];
+  if (props.onPropertyChange) props.onPropertyChange(row.key, value);
+  emit("update", { key: row.key, value });
 }
 
 // Convert a string to title case
 function toTitleCase(str) {
   // Split the string into an array of words
-  const words = str.split(' ');
-  
+  const words = str.split(" ");
+
   // Map over the words array, capitalizing the first letter of each word
-  const titleCasedWords = words.map(word => {
+  const titleCasedWords = words.map((word) => {
     if (word.length > 0) {
       return word.charAt(0).toUpperCase() + word.slice(1);
     }
     return word; // Return empty string for extra spaces
   });
-  
+
   // Join the words back together with a space
-  return titleCasedWords.join(' ');
+  return titleCasedWords.join(" ");
 }
 </script>
 
@@ -127,14 +141,26 @@ function toTitleCase(str) {
       :class="{ show }"
       :aria-modal="show"
       aria-labelledby="property-grid-offcanvas-label"
-      :style="show ? { visibility: 'visible', zIndex: 2000 } : { visibility: 'hidden' }"
+      :style="
+        show
+          ? { visibility: 'visible', zIndex: 2000 }
+          : { visibility: 'hidden' }
+      "
     >
       <div class="offcanvas-header border-bottom bg-body">
-        <h5 id="property-grid-offcanvas-label" class="offcanvas-title fw-semibold mb-0">
+        <h5
+          id="property-grid-offcanvas-label"
+          class="offcanvas-title fw-semibold mb-0"
+        >
           <i class="fa-solid fa-sliders me-2 text-secondary"></i>
-          {{ propertySchema?.label ?? 'Properties' }}
+          {{ propertySchema?.label ?? "Properties" }}
         </h5>
-        <button type="button" class="btn-close" aria-label="Close" @click="emit('close')" />
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          @click="emit('close')"
+        />
       </div>
       <div class="offcanvas-body p-0 overflow-auto">
         <!-- Has data: show grouped property sections with Bootstrap collapse -->
@@ -153,8 +179,13 @@ function toTitleCase(str) {
                 aria-expanded="true"
                 :aria-controls="`prop-collapse-${gi}`"
               >
-                <span class="property-section__header-text">{{ group.label }}</span>
-                <i class="fa-solid fa-chevron-down property-section__chevron" aria-hidden="true"></i>
+                <span class="property-section__header-text">{{
+                  group.label
+                }}</span>
+                <i
+                  class="fa-solid fa-chevron-down property-section__chevron"
+                  aria-hidden="true"
+                ></i>
               </button>
               <div :id="`prop-collapse-${gi}`" class="collapse show">
                 <div class="property-grid">
@@ -166,7 +197,9 @@ function toTitleCase(str) {
                     <!-- Only set for attribute when there's an actual input/select element -->
                     <label
                       :for="
-                        row.control === 'colorPure' || row.control === 'colorBoth' || row.control === 'font'
+                        row.control === 'colorPure' ||
+                        row.control === 'colorBoth' ||
+                        row.control === 'font'
                           ? undefined
                           : `prop-${row.key}`
                       "
@@ -184,7 +217,9 @@ function toTitleCase(str) {
                       />
                       <!-- ColorPure: color picker with no gradient support -->
                       <template v-else-if="row.control === 'colorPure'">
-                        <span class="small text-muted font-monospace">{{ toTitleCase(row.value) || '(None)' }}</span>
+                        <span class="small text-muted font-monospace">{{
+                          formatColorForDisplay(row.value) || "(None)"
+                        }}</span>
                         <Colorpicker
                           :model-value="row.value"
                           :original-value="row.default"
@@ -194,7 +229,9 @@ function toTitleCase(str) {
                       </template>
                       <!-- ColorBoth: color picker with gradient support -->
                       <template v-else-if="row.control === 'colorBoth'">
-                        <span class="small text-muted font-monospace">{{ toTitleCase(row.value) || '(None)' }}</span>
+                        <span class="small text-muted font-monospace">{{
+                          formatColorForDisplay(row.value) || "(None)"
+                        }}</span>
                         <Colorpicker
                           :model-value="row.value"
                           :original-value="row.default"
@@ -203,7 +240,9 @@ function toTitleCase(str) {
                         />
                       </template>
                       <div
-                        v-else-if="row.type === 'boolean' || row.control === 'switch'"
+                        v-else-if="
+                          row.type === 'boolean' || row.control === 'switch'
+                        "
                         class="form-check form-switch"
                       >
                         <input
@@ -215,15 +254,21 @@ function toTitleCase(str) {
                         />
                       </div>
                       <select
-                        v-else-if="row.control === 'select' && row.options?.length"
+                        v-else-if="
+                          row.control === 'select' && row.options?.length
+                        "
                         :id="`prop-${row.key}`"
                         class="form-select form-select-sm flex-grow-1"
-                        style="min-width: 0;"
+                        style="min-width: 0"
                         :value="row.value"
                         @change="handleInput(row, $event.target.value)"
                       >
-                        <option v-for="opt in row.options" :key="opt" :value="opt">
-                        {{ formatSelectOptionLabel(opt) }}
+                        <option
+                          v-for="opt in row.options"
+                          :key="opt"
+                          :value="opt"
+                        >
+                          {{ formatSelectOptionLabel(opt) }}
                         </option>
                       </select>
                       <input
@@ -231,7 +276,7 @@ function toTitleCase(str) {
                         :id="`prop-${row.key}`"
                         type="number"
                         class="form-control form-control-sm flex-grow-1"
-                        style="min-width: 0;"
+                        style="min-width: 0"
                         :min="row.min"
                         :max="row.max"
                         :step="row.step"
@@ -243,7 +288,7 @@ function toTitleCase(str) {
                         :id="`prop-${row.key}`"
                         type="text"
                         class="form-control form-control-sm flex-grow-1"
-                        style="min-width: 0;"
+                        style="min-width: 0"
                         :value="row.value"
                         @input="handleInput(row, $event.target.value)"
                       />
@@ -256,9 +301,18 @@ function toTitleCase(str) {
         </template>
         <!-- No data: empty state with close -->
         <div v-else class="text-center py-5 px-4">
-          <i class="fa-solid fa-mouse-pointer fa-2x text-muted mb-3 d-block" style="opacity: 0.5;"></i>
-          <p class="text-muted small mb-3">Double-click a widget to show and edit its properties.</p>
-          <button type="button" class="btn btn-sm btn-outline-secondary" @click="emit('close')">
+          <i
+            class="fa-solid fa-mouse-pointer fa-2x text-muted mb-3 d-block"
+            style="opacity: 0.5"
+          ></i>
+          <p class="text-muted small mb-3">
+            Double-click a widget to show and edit its properties.
+          </p>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            @click="emit('close')"
+          >
             Close
           </button>
         </div>

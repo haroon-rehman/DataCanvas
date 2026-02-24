@@ -1,8 +1,8 @@
 <script setup>
 /**
  * NewDashboardConfigOffcanvas — offcanvas to configure a new dashboard before initialization.
- * Collects: columns (max 12), rows (max 12), cellHeight, cellWidth, sizeMode.
- * Emits confirm with { column, row, cellHeight, cellWidth, sizeMode } or close on cancel.
+ * Collects: columns (max 12), rows (max 12), cellHeightPx, cellWidthPx, sizeMode.
+ * Emits confirm with { column, row, cellHeightPx, cellWidthPx, sizeMode } or close on cancel.
  */
 import { ref, watch } from 'vue'
 
@@ -13,28 +13,32 @@ const props = defineProps({
   defaultColumn: { type: Number, default: 12 },
   /** Default row count. */
   defaultRow: { type: Number, default: 6 },
-  /** Default cell height (e.g. '70px'). */
-  defaultCellHeight: { type: String, default: '70px' },
-  /** Default cell width (e.g. '120px'). */
-  defaultCellWidth: { type: String, default: '120px' },
-  /** Default size mode: 'auto' or 'computed'. */
-  defaultSizeMode: { type: String, default: 'computed', validator: (v) => ['auto', 'computed'].includes(v) },
+  /** Default cell height in pixels. */
+  defaultCellHeightPx: { type: Number, default: 70 },
+  /** Default cell width in pixels. */
+  defaultCellWidthPx: { type: Number, default: 120 },
+  /** Default size mode: 'Auto' or 'Computed'. */
+  defaultSizeMode: {
+    type: String,
+    default: "Computed",
+    validator: (v) => ["Auto", "Computed"].includes(v),
+  },
 })
 
 const emit = defineEmits(['close', 'confirm'])
 
 const columns = ref(12)
 const rows = ref(6)
-const cellHeight = ref('70px')
-const cellWidth = ref('120px')
-const sizeMode = ref('computed')
+const cellHeightPx = ref(70)
+const cellWidthPx = ref(120)
+const sizeMode = ref('Computed')
 
 function resetForm() {
   columns.value = Math.min(12, Math.max(1, props.defaultColumn))
   rows.value = Math.min(12, Math.max(1, props.defaultRow))
-  cellHeight.value = props.defaultCellHeight || '70px'
-  cellWidth.value = props.defaultCellWidth || '120px'
-  sizeMode.value = props.defaultSizeMode === 'auto' ? 'auto' : 'computed'
+  cellHeightPx.value = Math.max(1, Number(props.defaultCellHeightPx) || 70)
+  cellWidthPx.value = Math.max(1, Number(props.defaultCellWidthPx) || 120)
+  sizeMode.value = props.defaultSizeMode === 'Auto' ? 'Auto' : 'Computed'
 }
 
 watch(
@@ -50,15 +54,14 @@ watch(
 function handleConfirm() {
   const col = Math.min(12, Math.max(1, Number(columns.value) || 12))
   const row = Math.min(12, Math.max(1, Number(rows.value) || 6))
-  const ch = (cellHeight.value || '70px').trim() || '70px'
-  const cw = (cellWidth.value || '120px').trim() || '120px'
-  const sm = sizeMode.value === 'auto' ? 'auto' : 'computed'
+  const ch = Math.max(1, Number(cellHeightPx.value) || 70)
+  const cw = Math.max(1, Number(cellWidthPx.value) || 120)
+  const sm = sizeMode.value === 'Auto' ? 'Auto' : 'Computed'
   emit('confirm', {
     column: col,
-    maxColumn: col,
     row,
-    cellHeight: ch,
-    cellWidth: cw,
+    cellHeightPx: ch,
+    cellWidthPx: cw,
     sizeMode: sm,
     margin: 5,
   })
@@ -116,23 +119,25 @@ function handleCancel() {
           />
         </div>
         <div class="mb-3">
-          <label for="config-cell-height" class="form-label">Cell Height</label>
+          <label for="config-cell-height" class="form-label">Cell Height (px)</label>
           <input
             id="config-cell-height"
-            v-model="cellHeight"
-            type="text"
+            v-model.number="cellHeightPx"
+            type="number"
             class="form-control"
-            placeholder="e.g. 70px"
+            min="1"
+            placeholder="70"
           />
         </div>
         <div class="mb-3">
-          <label for="config-cell-width" class="form-label">Cell Width</label>
+          <label for="config-cell-width" class="form-label">Cell Width (px)</label>
           <input
             id="config-cell-width"
-            v-model="cellWidth"
-            type="text"
+            v-model.number="cellWidthPx"
+            type="number"
             class="form-control"
-            placeholder="e.g. 120px"
+            min="1"
+            placeholder="120"
           />
         </div>
         <div class="mb-3">
@@ -142,8 +147,8 @@ function handleCancel() {
             v-model="sizeMode"
             class="form-select"
           >
-            <option value="computed">Computed (respect cell width/height)</option>
-            <option value="auto">Auto (fill container width)</option>
+            <option value="Computed">Computed (respect cell width/height)</option>
+            <option value="Auto">Auto (fill container width)</option>
           </select>
         </div>
         <div class="d-flex gap-2 justify-content-end mt-4">

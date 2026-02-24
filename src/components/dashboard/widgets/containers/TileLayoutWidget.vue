@@ -232,7 +232,12 @@ function getWidgetProps(col, row, rowIndex, colIndex) {
       gridOptions: mergedGridOptions,
       widgetComponents: resolvedContentWidgetComponents.value,
       gridDefaultsByType: props.gridDefaultsByType,
-      sizeMode: cellProps.sizeMode ?? "computed",
+      sizeMode:
+        cellProps.sizeMode === "auto"
+          ? "Auto"
+          : cellProps.sizeMode === "computed"
+            ? "Computed"
+            : cellProps.sizeMode ?? "Computed",
       backgroundColor: cellProps.backgroundColor ?? "",
       foregroundColor: cellProps.foregroundColor ?? "",
       editMode: editMode.value,

@@ -1,0 +1,39 @@
+{
+  "id": "25fbe9ec-f4b2-4a6b-ydd1-70a02135e01a",
+  "label": "Test",
+  "description": "Hello World",
+  "created": "2026-02-24T18:16:23.295Z",
+  "updated": "2026-02-24T18:40:58.179Z",
+  "widgets": [
+    {
+      "type": "IconValueWidget",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 2,
+      "minW": 1,
+      "minH": 2,
+      "id": "2ecef46c-c598-46ae-a29d-4b1d43ecd9fc"
+    },
+    {
+      "type": "IconValueWidget",
+      "x": 1,
+      "y": 2,
+      "w": 1,
+      "h": 2,
+      "minW": 1,
+      "minH": 2,
+      "id": "2e647b68-55f3-443f-a5d4-c5e71df49e06"
+    }
+  ],
+  "gridOptions": {
+    "column": 4,
+    "row": 4,
+    "cellHeightPx": 70,
+    "cellWidthPx": 120,
+    "sizeMode": "Computed",
+    "margin": 5,
+    "backgroundColor": "#F8F9FA",
+    "foregroundColor": "#212529"
+  }
+}
