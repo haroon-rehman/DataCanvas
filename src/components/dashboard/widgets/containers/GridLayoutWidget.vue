@@ -438,6 +438,7 @@ function getLayout(w) {
 function getLayoutBindings(w) {
   const L = getLayout(w);
   return {
+    ...(w?.id != null && { "gs-id": w.id }),
     "gs-x": L.x,
     "gs-y": L.y,
     "gs-w": L.w,
@@ -691,6 +692,58 @@ function syncGridToWidgets() {
   });
   if (JSON.stringify(next.map((n) => [n.x, n.y, n.w, n.h])) !== JSON.stringify(current.map((n) => [n.x, n.y, n.w, n.h]))) {
     emit("update:widgets", next);
+  }
+}
+
+/** Sync only positions (x, y) from grid; keep w, h from current widgets. Use after column/options change so we don't persist any size changes GridStack may have applied. */
+function syncGridToWidgetsPositionsOnly() {
+  if (!grid?.engine?.nodes || !props.widgets?.length) return;
+  const nodes = grid.engine.nodes;
+  const current = props.widgets || [];
+  if (nodes.length !== current.length) return;
+  const next = current.map((w, i) => {
+    const node = nodes[i];
+    if (!node) return w;
+    return { ...w, x: node.x, y: node.y };
+  });
+  if (JSON.stringify(next.map((n) => [n.x, n.y])) !== JSON.stringify(current.map((n) => [n.x, n.y]))) {
+    emit("update:widgets", next);
+  }
+}
+
+/** Restore each grid node's w/h from props.widgets so display matches our data after column change (GridStack may have altered sizes). */
+function restoreNodeSizesFromWidgets() {
+  if (!grid?.engine?.nodes || !props.widgets?.length || !gridEl.value || typeof grid.update !== "function") return;
+  const nodes = grid.engine.nodes;
+  const current = props.widgets || [];
+  const items = gridEl.value.querySelectorAll(".grid-stack-item");
+  if (items.length !== nodes.length || items.length !== current.length) return;
+  nodes.forEach((node, i) => {
+    const w = current[i];
+    if (!w || !node) return;
+    const nw = w.w ?? 1;
+    const nh = w.h ?? 1;
+    if (node.w !== nw || node.h !== nh) {
+      const el = node.el ?? items[i];
+      grid.update(el, { w: nw, h: nh });
+    }
+  });
+}
+
+/** Re-apply exact layout (x,y,w,h) by widget id (gs-id). This avoids index-order issues. */
+function applyLayoutById(layout) {
+  if (!gridEl.value || !grid || typeof grid.update !== "function") return;
+  if (!Array.isArray(layout) || !layout.length) return;
+  for (const item of layout) {
+    if (!item?.id) continue;
+    const el = gridEl.value.querySelector(`.grid-stack-item[gs-id="${CSS?.escape ? CSS.escape(String(item.id)) : String(item.id)}"]`);
+    if (!el) continue;
+    grid.update(el, {
+      x: item.x ?? 0,
+      y: item.y ?? 0,
+      w: item.w ?? 1,
+      h: item.h ?? 1,
+    });
   }
 }
 
@@ -970,9 +1023,18 @@ watch(
     if (!isMounted.value || !grid || !overlayEl) return;
 
     try {
-      // Update grid column/row configuration
+      const saved = (props.widgets || []).map((w) => ({
+        id: w?.id,
+        x: w?.x ?? 0,
+        y: w?.y ?? 0,
+        w: w?.w ?? 1,
+        h: w?.h ?? 1,
+      }));
+
+      // Update grid column/row configuration. Use 'none' so positions and sizes (x,y,w,h)
+      // stay unchanged when changing columns; only adjust if items don't fit.
       if (cols != null && typeof grid.column === "function") {
-        grid.column(cols);
+        grid.column(cols, "none");
         if (typeof grid.maxColumn === "function") {
           grid.maxColumn(cols);
         }
@@ -999,9 +1061,13 @@ watch(
       }
       nextTick(() => {
         if (grid && overlayEl) {
+          // Re-apply the exact saved layout by id so GridStack doesn't normalize "full width" items
+          // (e.g. w=2 in 2-col grid becoming w=3 when switching to 3 cols).
+          applyLayoutById(saved);
           updateOverlaySize();
           updateOverlayGridlineColor();
           updateSizeTooltips();
+          syncGridToWidgetsPositionsOnly();
         }
       });
     } catch (error) {

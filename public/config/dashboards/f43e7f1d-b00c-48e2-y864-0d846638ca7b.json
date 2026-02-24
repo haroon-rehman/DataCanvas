@@ -1,0 +1,28 @@
+{
+  "id": "f43e7f1d-b00c-48e2-y864-0d846638ca7b",
+  "label": "Test2",
+  "description": "",
+  "created": "2026-02-24T14:15:58.689Z",
+  "updated": "2026-02-24T14:19:17.085Z",
+  "widgets": [
+    {
+      "type": "IconValueWidget",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 2,
+      "minW": 1,
+      "minH": 2,
+      "id": "030f7416-3337-4e03-a018-ce75967203f9"
+    }
+  ],
+  "gridOptions": {
+    "column": 4,
+    "maxColumn": 4,
+    "row": 6,
+    "cellHeight": "75px",
+    "cellWidth": "140px",
+    "sizeMode": "computed",
+    "margin": 5
+  }
+}

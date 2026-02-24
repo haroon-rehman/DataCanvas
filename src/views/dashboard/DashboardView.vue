@@ -79,6 +79,27 @@ const currentDashboardMeta = ref(null);
 /** When true, show NewDashboardConfigOffcanvas before rendering grid (new dashboard only) */
 const showNewDashboardConfig = ref(false);
 
+function createWidgetId() {
+  try {
+    // browsers only; ok to fall back if unavailable
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch {
+    // ignore
+  }
+  return `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function ensureWidgetIds(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((w) => {
+    if (w && typeof w === "object" && w.id) return w;
+    if (w && typeof w === "object") return { ...w, id: createWidgetId() };
+    return w;
+  });
+}
+
 async function loadDashboardById(id) {
   if (!id) {
     widgets.value = [];
@@ -98,7 +119,7 @@ async function loadDashboardById(id) {
     if (!res.ok) throw new Error(`Dashboard not found: ${res.status}`);
     const data = await res.json();
     if (!Array.isArray(data.widgets)) throw new Error("Invalid dashboard file");
-    widgets.value = data.widgets;
+    widgets.value = ensureWidgetIds(data.widgets);
     gridOptions.value = { ...defaultGridOptions, ...(data.gridOptions || {}) };
     currentDashboardMeta.value = {
       id: data.id || id,
@@ -185,6 +206,88 @@ function downloadDashboardAsFile(payload) {
   a.click();
   URL.revokeObjectURL(a.href);
 }
+function getDashboardSettingsSchema() {
+  const meta = currentDashboardMeta.value;
+  const opts = gridOptions.value;
+  return {
+    label: "Dashboard settings",
+    children: [
+      {
+        label: "Identity",
+        children: [
+          { key: "id", label: "Id", value: meta?.id ?? "", control: "text" },
+          { key: "label", label: "Label", value: meta?.label ?? "", control: "text" },
+          {
+            key: "description",
+            label: "Description",
+            value: meta?.description ?? "",
+            control: "text",
+          },
+        ],
+      },
+      {
+        label: "Grid",
+        children: [
+          {
+            key: "column",
+            label: "Columns",
+            value: opts?.column ?? defaultGridOptions.column,
+            control: "number",
+            min: 1,
+            max: 12,
+          },
+          {
+            key: "row",
+            label: "Rows",
+            value: opts?.row ?? defaultGridOptions.row,
+            control: "number",
+            min: 1,
+            max: 12,
+          },
+          {
+            key: "cellHeight",
+            label: "Cell height",
+            value: opts?.cellHeight ?? defaultGridOptions.cellHeight,
+            control: "text",
+          },
+          {
+            key: "cellWidth",
+            label: "Cell width",
+            value: opts?.cellWidth ?? defaultGridOptions.cellWidth,
+            control: "text",
+          },
+          {
+            key: "sizeMode",
+            label: "Size mode",
+            value: opts?.sizeMode ?? defaultGridOptions.sizeMode ?? "computed",
+            control: "select",
+            options: ["computed", "auto"],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function handleSettings() {
+  const schema = getDashboardSettingsSchema();
+  openPropertyEditor(schema, {
+    update(key, value) {
+      if (["id", "label", "description"].includes(key)) {
+        if (!currentDashboardMeta.value) {
+          currentDashboardMeta.value = { id: "", label: "", description: "" };
+        }
+        currentDashboardMeta.value = {
+          ...currentDashboardMeta.value,
+          [key]: value,
+        };
+      } else {
+        const gridKey = key === "rows" ? "row" : key === "columns" ? "column" : key;
+        gridOptions.value = { ...gridOptions.value, [gridKey]: value };
+      }
+    },
+  });
+}
 
 async function handleSaveDirect() {
   const meta = currentDashboardMeta.value;
@@ -244,7 +347,7 @@ function importJSON() {
     .readText()
     .then((text) => {
       const data = JSON.parse(text);
-      widgets.value = data.widgets || [];
+      widgets.value = ensureWidgetIds(data.widgets || []);
       gridOptions.value = {
         ...defaultGridOptions,
         ...(data.gridOptions || {}),
@@ -313,6 +416,14 @@ const dashboardSavePayload = computed(() => ({
                   <a
                     class="dropdown-item"
                     href="#"
+                    @click.prevent="handleSettings"
+                    ><i class="fa-solid fa-gear"></i> Settings</a
+                  >
+                </li>
+                <li v-if="currentDashboardMeta">
+                  <a
+                    class="dropdown-item"
+                    href="#"
                     @click.prevent="handleSaveDirect"
                     ><i class="fa-solid fa-save"></i> Save</a
                   >
@@ -351,9 +462,9 @@ const dashboardSavePayload = computed(() => ({
       style="min-height: 400px; overflow: hidden"
     >
       <GridLayoutWidget
-        :key="`grid-${gridOptions.column}-${gridOptions.row}-${gridOptions.cellHeight}-${gridOptions.cellWidth}`"
+        key="dashboard-grid"
         :widgets="widgets"
-        @update:widgets="widgets = $event"
+        @update:widgets="widgets = ensureWidgetIds($event)"
         :grid-options="gridOptions"
         :size-mode="gridOptions.sizeMode ?? 'computed'"
         :update-grid-options="
