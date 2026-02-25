@@ -13,6 +13,10 @@ import { widgetMeta as scatterChartWidgetMeta } from "../metrics/ScatterChartWid
 import { widgetMeta as gridLayoutWidgetMeta } from "./GridLayoutWidget.vue";
 import { generateWidgetIdentifier } from "../../_internals/widgetIdentifierCounter.js";
 import {
+  collectIconValueUniqueNamesFromLayout,
+  generateUniqueIconValueName,
+} from "../../../../utils/widgetUniqueNameUtils.js";
+import {
   generateRowId,
   getDefaultTemplate,
 } from "../../../../utils/tileLayoutDefaults.js";
@@ -92,6 +96,21 @@ const resolvedContentWidgetComponents = computed(() =>
 
 /** Update widget property in a cell. */
 function updateWidgetProperty(rowIndex, colIndex, key, value) {
+  if (key === "uniqueName") {
+    const cellContent = localModel.value.rows?.[rowIndex]?.columns?.[colIndex]?.content;
+    if (cellContent?.type === "IconValueWidget") {
+      const newName = String(value || "").trim();
+      if (newName) {
+        const existing = collectIconValueUniqueNamesFromLayout(localModel.value);
+        const currentName = String(cellContent?.props?.uniqueName || "").trim();
+        if (currentName) existing.delete(currentName);
+        if (existing.has(newName)) {
+          alert("Another Icon & Value widget already has this name. Please choose a unique name.");
+          return;
+        }
+      }
+    }
+  }
   const newRows = localModel.value.rows.map((r, i) => {
     if (i !== rowIndex) return r;
     const newColumns = r.columns.map((c, j) => {
@@ -207,6 +226,7 @@ function getWidgetProps(col, row, rowIndex, colIndex) {
 
   const baseProps = {
     ...cellProps,
+    editMode: editMode.value,
     // Pass wrapped openPropertyEditor to all widgets so they can open PropertyGridWidget with update callback
     ...(wrappedOpenPropertyEditor && {
       openPropertyEditor: wrappedOpenPropertyEditor,
@@ -1190,14 +1210,16 @@ function getColumnInfoFromRegionId(regionId) {
 /** Default props when adding a widget to a region (by type). */
 function getDefaultPropsForWidgetType(type) {
   switch (type) {
-    case "IconValueWidget":
+    case "IconValueWidget": {
+      const existing = collectIconValueUniqueNamesFromLayout(localModel.value);
       return {
-        identifier: generateWidgetIdentifier("IconValueWidget"),
+        uniqueName: generateUniqueIconValueName(existing),
         value: "--",
         label: "",
-        icon: "fa-chart-simple",
+        icon: "fa-solid fa-chart-simple",
         iconColor: "steelblue",
       };
+    }
     case "PieChartWidget":
       return {
         identifier: generateWidgetIdentifier("PieChartWidget"),
@@ -2806,6 +2828,10 @@ onMounted(() => {
   cursor: default;
   flex: 1;
   min-height: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .cell-widget-preview {

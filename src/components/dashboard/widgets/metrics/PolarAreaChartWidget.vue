@@ -208,7 +208,7 @@ ChartJS.register(Title, Tooltip, Legend, ArcElement, RadialLinearScale)
 
 const props = defineProps({
   openPropertyEditor: { type: Function, default: null },
-
+  editMode: { type: Boolean, default: false },
   identifier: { type: String, default: '' },
 
   title: { type: String, default: 'Polar Area Chart' },
@@ -437,6 +437,7 @@ const chartOptions = computed(() => ({
 <template>
   <div
     class="card h-100 d-flex flex-column"
+    :class="{ 'edit-mode': editMode }"
     :style="cardStyle"
     :role="openPropertyEditor ? 'button' : undefined"
     tabindex="0"
@@ -475,6 +476,9 @@ const chartOptions = computed(() => ({
 
 <style scoped>
 .card[role='button'] {
+  cursor: default;
+}
+.card[role='button'].edit-mode {
   cursor: pointer;
 }
 

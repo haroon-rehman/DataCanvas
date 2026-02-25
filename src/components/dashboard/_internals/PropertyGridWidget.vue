@@ -46,6 +46,14 @@ function getEditableRows(data) {
   return rows;
 }
 
+/** Labels for font style options (B=bold, U=underline, I=italic, S=strikethrough). */
+const FONT_STYLE_LABELS = {
+  B: "Bold",
+  U: "Underline",
+  I: "Italic",
+  S: "Strikethrough",
+};
+
 /** Display formatting for select option labels (without changing the underlying value). */
 function formatSelectOptionLabel(opt) {
   if (opt == null || opt === "") return "(none)";
@@ -112,6 +120,28 @@ function handleInput(row, newValue) {
   editableRows.value = [...editableRows.value];
   if (props.onPropertyChange) props.onPropertyChange(row.key, value);
   emit("update", { key: row.key, value });
+}
+
+/** Toggle an option in a fontStyle multiselect array. */
+function toggleFontStyleOption(row, opt) {
+  const arr = Array.isArray(row.value) ? [...row.value] : [];
+  const idx = arr.indexOf(opt);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push(opt);
+  arr.sort();
+  handleInput(row, arr);
+}
+
+/** Ensure fontStyle value is an array for display. */
+function ensureFontStyleArray(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string" && val.trim()) {
+    return val
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 // Convert a string to title case
@@ -199,7 +229,8 @@ function toTitleCase(str) {
                       :for="
                         row.control === 'colorPure' ||
                         row.control === 'colorBoth' ||
-                        row.control === 'font'
+                        row.control === 'font' ||
+                        row.control === 'fontStyle'
                           ? undefined
                           : `prop-${row.key}`
                       "
@@ -252,6 +283,35 @@ function toTitleCase(str) {
                           :checked="row.value === true || row.value === 'true'"
                           @change="handleInput(row, $event.target.checked)"
                         />
+                      </div>
+                      <div
+                        v-else-if="
+                          row.control === 'fontStyle' && row.options?.length
+                        "
+                        class="btn-group btn-group-sm w-100"
+                        role="group"
+                        :aria-label="`${row.label} options`"
+                      >
+                        <!-- eslint-disable-next-line vue/no-v-for-template-key -- template needed for flat btn-group structure -->
+                        <template v-for="opt in row.options" :key="opt">
+                          <input
+                            :id="`prop-${row.key}-${opt}`"
+                            type="checkbox"
+                            class="btn-check"
+                            autocomplete="off"
+                            :checked="
+                              ensureFontStyleArray(row.value).includes(opt)
+                            "
+                            @change="toggleFontStyleOption(row, opt)"
+                          />
+                          <label
+                            :for="`prop-${row.key}-${opt}`"
+                            class="btn btn-outline-secondary btn-sm"
+                            :title="FONT_STYLE_LABELS[opt] ?? opt"
+                          >
+                            {{ opt }}
+                          </label>
+                        </template>
                       </div>
                       <select
                         v-else-if="

@@ -77,6 +77,7 @@ const propertySchema = ref(null);
 const propertyChangeHandler = ref(null);
 
 function openPropertyEditor(propertySchemaData, opts = {}) {
+  if (!editMode.value) return;
   propertySchema.value = propertySchemaData;
   propertyChangeHandler.value = opts.update ?? null;
   showPropertyEditor.value = true;

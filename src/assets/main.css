@@ -1,5 +1,13 @@
 /* Bootstrap is imported in main.js. No custom styles. */
 
+/* Disable text selection inside widgets */
+.grid-stack-item-content {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
 /* Less space between widget top and icon in grid dashboard */
 .grid-stack .card .card-body {
   padding-top: 0.5rem;

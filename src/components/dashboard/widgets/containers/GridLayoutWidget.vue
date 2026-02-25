@@ -44,6 +44,10 @@ import {
   gridDefaults as scatterChartGridDefaults,
   widgetMeta as scatterChartWidgetMeta,
 } from "../metrics/ScatterChartWidget.vue";
+import {
+  collectIconValueUniqueNames,
+  generateUniqueIconValueName,
+} from "../../../../utils/widgetUniqueNameUtils.js";
 
 /** Default grid size when this widget is used inside a layout. */
 export const gridDefaults = { w: 2, h: 2, minW: 1, minH: 1 };
@@ -441,7 +445,7 @@ function adoptNewWidgetInGrid() {
   const last = items[items.length - 1];
   if (last && !last.gridstackNode) {
     grid.makeWidget(last);
-    updateSizeTooltips();
+    updateWidgetTooltips();
   }
 }
 
@@ -459,25 +463,41 @@ function getWidgetProps(w, index) {
   const base = Object.fromEntries(
     Object.entries(w).filter(([key]) => !LAYOUT_KEYS.includes(key)),
   );
+  base.editMode = props.editMode;
   // Use computed openPropertyEditor (props or inject)
   const fn = openPropertyEditor.value;
   if (fn) {
+    const doUpdate = (key, value) => {
+      if (key === "uniqueName" && w?.type === "IconValueWidget") {
+        const newName = String(value || "").trim();
+        if (newName) {
+          const existing = collectIconValueUniqueNames(props.widgets || []);
+          existing.delete(String(w.uniqueName || "").trim());
+          if (existing.has(newName)) {
+            alert("Another Icon & Value widget already has this name. Please choose a unique name.");
+            return;
+          }
+        }
+      }
+      if (props.updateWidget) {
+        props.updateWidget(index, key, value);
+      } else {
+        const next = [...(props.widgets || [])];
+        next[index] = { ...next[index], [key]: value };
+        emit("update:widgets", next);
+      }
+    };
     if (props.updateWidget) {
       base.openPropertyEditor = (propertySchema) =>
         fn(propertySchema, {
-          update: (key, value) => props.updateWidget(index, key, value),
+          update: doUpdate,
           widgetIndex: index,
           refresh: () => buildPropertySchemaForWidget(props.widgets[index]),
         });
     } else {
-      // Fallback: update by emitting new array if no updateWidget prop
       base.openPropertyEditor = (propertySchema) =>
         fn(propertySchema, {
-          update: (key, value) => {
-            const next = [...(props.widgets || [])];
-            next[index] = { ...next[index], [key]: value };
-            emit("update:widgets", next);
-          },
+          update: doUpdate,
           widgetIndex: index,
           refresh: () => buildPropertySchemaForWidget(props.widgets[index]),
         });
@@ -486,21 +506,23 @@ function getWidgetProps(w, index) {
   return base;
 }
 
-function updateSizeTooltips() {
+/** Get the widget description for tooltip. Only shows the description field. */
+function getWidgetDescription(widget) {
+  if (!widget) return "";
+  const d = widget.description;
+  return d != null && String(d).trim() ? String(d).trim() : "";
+}
+
+function updateWidgetTooltips() {
   nextTick(() => {
     if (!gridEl.value || !grid) return;
-    const opts = grid.opts;
-    const cellW = getCellWidthPx(opts);
-    const cellH = getCellHeightPx(opts);
+    const widgets = props.widgets || [];
+    const widgetById = new Map(widgets.filter((w) => w?.id).map((w) => [w.id, w]));
     gridEl.value.querySelectorAll(".grid-stack-item").forEach((el) => {
-      const node = el.gridstackNode;
-      if (node && cellW != null && cellH != null)
-        el.setAttribute(
-          "title",
-          `${Math.round(node.w * cellW)} × ${Math.round(node.h * cellH)} px`,
-        );
-      else
-        el.setAttribute("title", `${el.offsetWidth} × ${el.offsetHeight} px`);
+      const id = el.getAttribute("gs-id") ?? el.gridstackNode?.id;
+      const widget = id ? widgetById.get(id) : null;
+      const desc = getWidgetDescription(widget);
+      el.setAttribute("title", desc || "");
     });
   });
 }
@@ -697,6 +719,7 @@ onMounted(() => {
     acceptWidgets: true,
     alwaysShowResizeHandle: props.editMode,
     disableResize: !props.editMode,
+    disableDrag: !props.editMode,
     float: true,
     draggable: {
       scroll: true,
@@ -717,8 +740,8 @@ onMounted(() => {
   grid.updateOptions({
     acceptWidgets: (el) => el.gridstackNode?.grid === grid,
   });
-  updateSizeTooltips();
-  grid.on("resizestop dragstop", updateSizeTooltips);
+  updateWidgetTooltips();
+  grid.on("resizestop dragstop", updateWidgetTooltips);
 
   // Create overlay wrapper and overlay element
   if (!gridEl.value.querySelector(".grid-overlay-wrapper")) {
@@ -819,7 +842,7 @@ onBeforeUnmount(() => {
     grid.off("dragstart");
     if (onDragStop) grid.off("dragstop", onDragStop);
     if (onResizeStop) grid.off("resizestop", onResizeStop);
-    grid.off("resizestop dragstop", updateSizeTooltips);
+    grid.off("resizestop dragstop", updateWidgetTooltips);
   }
   if (resizeObserver) {
     resizeObserver.disconnect();
@@ -869,6 +892,15 @@ function isCellOccupied(col, row, gridRef = null) {
   return false;
 }
 
+/** Default props for a newly added widget (e.g. uniqueName for IconValueWidget). */
+function getDefaultWidgetProps(widgetType) {
+  if (widgetType === "IconValueWidget") {
+    const existing = collectIconValueUniqueNames(props.widgets || []);
+    return { uniqueName: generateUniqueIconValueName(existing) };
+  }
+  return {};
+}
+
 function addWidgetAtCell(widgetType, x, y) {
   const defaults = props.gridDefaultsByType?.[widgetType] ?? {
     w: 1,
@@ -876,6 +908,7 @@ function addWidgetAtCell(widgetType, x, y) {
     minW: 1,
     minH: 1,
   };
+  const defaultProps = getDefaultWidgetProps(widgetType);
   const newWidget = {
     type: widgetType,
     x,
@@ -884,6 +917,7 @@ function addWidgetAtCell(widgetType, x, y) {
     h: defaults.h ?? 1,
     minW: defaults.minW ?? 1,
     minH: defaults.minH ?? 1,
+    ...defaultProps,
   };
   const next = [...(props.widgets || []), newWidget];
   emit("update:widgets", next);
@@ -930,6 +964,15 @@ function handleGridDoubleClick(e) {
   }
 }
 
+// Watch widgets to refresh tooltips when description/label/etc. changes
+watch(
+  () => props.widgets,
+  () => {
+    if (isMounted.value && grid) updateWidgetTooltips();
+  },
+  { deep: true },
+);
+
 // Watch editMode to toggle class and resize handle visibility
 watch(
   () => props.editMode,
@@ -939,6 +982,7 @@ watch(
       grid.updateOptions({
         alwaysShowResizeHandle: val,
         disableResize: !val,
+        disableDrag: !val,
       });
     }
   },
@@ -1001,7 +1045,7 @@ watch(
           applyLayoutById(saved);
           updateOverlaySize();
           updateOverlayGridlineColor();
-          updateSizeTooltips();
+          updateWidgetTooltips();
           syncGridToWidgetsPositionsOnly();
         }
       });
@@ -1019,6 +1063,7 @@ watch(
 <template>
   <div
     class="dashboard-grid-widget-root"
+    :class="{ 'edit-mode': editMode }"
     :style="selfAlignmentStyle"
     tabindex="0"
     @keydown.enter.prevent="onWidgetClick"
@@ -1054,7 +1099,7 @@ watch(
 </template>
 
 <style scoped>
-.dashboard-grid-widget-root {
+.dashboard-grid-widget-root.edit-mode {
   cursor: pointer;
 }
 </style>
