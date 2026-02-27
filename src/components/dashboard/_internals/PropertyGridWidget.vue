@@ -4,7 +4,7 @@
  * Used when a widget is selected: shows grouped rows (label/value + control type) and emits
  * updates. Expects propertySchema shape: { label?, children: [ { label, children: [ { key, label?, value, control?, options?, default? } ] } ] }.
  */
-import { computed, reactive, ref, watch } from "vue";
+import { computed, onUnmounted, reactive, ref, watch } from "vue";
 import Colorpicker from "./ColorPicker.vue";
 import FontSelect from "./FontSelect.vue";
 
@@ -18,6 +18,32 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close", "update"]);
+
+/** Key of the row that currently has focus (for footer description). */
+const activeRowKey = ref(null);
+
+function onEscapeKey(e) {
+  if (e.key === "Escape" && props.show) {
+    emit("close");
+  }
+}
+
+watch(
+  () => props.show,
+  (visible) => {
+    if (visible) {
+      document.addEventListener("keydown", onEscapeKey);
+    } else {
+      document.removeEventListener("keydown", onEscapeKey);
+      activeRowKey.value = null;
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", onEscapeKey);
+});
 
 /** Flatten properties into a list of editable rows (one per leaf with key). Used to drive the grid. */
 function getEditableRows(data) {
@@ -39,6 +65,7 @@ function getEditableRows(data) {
           min: leaf.min,
           max: leaf.max,
           step: leaf.step,
+          description: leaf.description ?? null,
         });
       }
     }
@@ -56,7 +83,7 @@ const FONT_STYLE_LABELS = {
 
 /** Display formatting for select option labels (without changing the underlying value). */
 function formatSelectOptionLabel(opt) {
-  if (opt == null || opt === "") return "(none)";
+  if (opt == null || opt === "") return "(None)";
   if (typeof opt !== "string") return String(opt);
 
   // Only normalize the alignment words requested; do NOT title-case colors or other values.
@@ -99,11 +126,38 @@ const groupedRows = computed(() => {
   return groups;
 });
 
+/** Description for the active row, shown in the card footer. */
+const activeRowDescription = computed(() => {
+  if (!activeRowKey.value) return null;
+  const row = editableRows.value.find((r) => r.key === activeRowKey.value);
+  return row?.description ?? null;
+});
+
+/** Set active row when focus enters a control. */
+function onGridFocusIn(e) {
+  const controls = e.target?.closest?.(".property-grid__controls");
+  if (!controls) return;
+  const label = controls.previousElementSibling;
+  if (label?.dataset?.key) activeRowKey.value = label.dataset.key;
+}
+
 import { normalizeColorValue } from "../../../utils/colorUtils.js";
 
-/** Format color for display: hex → uppercase, color names → title case, gradients unchanged. */
+/** Check if color value represents full transparency. */
+function isTransparentColor(value) {
+  if (value == null || typeof value !== "string") return false;
+  const s = value.trim().toLowerCase();
+  if (s === "" || s === "transparent") return true;
+  if (s === "#00000000") return true;
+  const rgba = s.match(/^rgba\s*\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0(\.0*)?\s*\)$/i);
+  return !!rgba;
+}
+
+/** Format color for display: transparent → "Transparent", hex → uppercase, color names → title case, gradients unchanged. */
 function formatColorForDisplay(value) {
-  return value != null && value !== "" ? normalizeColorValue(value) : "";
+  if (value == null || value === "") return "";
+  if (isTransparentColor(value)) return "Transparent";
+  return normalizeColorValue(value);
 }
 
 /** Called when any control changes: update row for local display, call onPropertyChange, and emit. */
@@ -218,7 +272,7 @@ function toTitleCase(str) {
                 ></i>
               </button>
               <div :id="`prop-collapse-${gi}`" class="collapse show">
-                <div class="property-grid">
+                <div class="property-grid" @focusin="onGridFocusIn">
                   <div
                     v-for="row in group.rows"
                     :key="row.key"
@@ -235,6 +289,8 @@ function toTitleCase(str) {
                           : `prop-${row.key}`
                       "
                       class="property-grid__label"
+                      :data-key="row.key"
+                      :title="row.description ?? undefined"
                     >
                       {{ row.label }}
                     </label>
@@ -377,6 +433,13 @@ function toTitleCase(str) {
           </button>
         </div>
       </div>
+      <!-- Offcanvas footer: extended description for focused property (fixed, always visible) -->
+      <div
+        v-if="propertySchema && groupedRows.length && activeRowDescription"
+        class="offcanvas-footer border-top bg-light px-3 py-2 small text-muted"
+      >
+        {{ activeRowDescription }}
+      </div>
     </div>
     <!-- Backdrop: only when open; click to close -->
     <div
@@ -389,6 +452,16 @@ function toTitleCase(str) {
 </template>
 
 <style scoped>
+.property-grid-root {
+  user-select: none;
+}
+
+.property-grid-root input,
+.property-grid-root select,
+.property-grid-root textarea {
+  user-select: text;
+}
+
 /* Two-column grid: label | control. minmax(0, 1fr) allows controls to shrink. */
 .property-grid {
   display: grid;
@@ -475,6 +548,11 @@ function toTitleCase(str) {
 
 .property-grid__font-select {
   min-width: 0;
+}
+
+/* Offcanvas footer: fixed at bottom, does not scroll with body */
+.offcanvas-footer {
+  flex-shrink: 0;
 }
 
 /* Ensure PropertyGridWidget appears above all other offcanvases */

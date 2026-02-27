@@ -1,6 +1,6 @@
 <script setup>
 /**
- * TileLayoutListView — lists tile layouts stored in public/config JSON files.
+ * TileLayoutListView — lists tile layouts stored in public/config/tilelayouts JSON files.
  * Uses Bootstrap grid. Columns: Label (hyperlink), Description (clipped), Created, Updated, Edit.
  * Label links to TileLayoutView (view mode). Edit links to TileLayoutView with edit=1.
  */

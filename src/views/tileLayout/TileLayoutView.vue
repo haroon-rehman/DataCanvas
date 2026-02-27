@@ -33,6 +33,12 @@ import PolarAreaChartWidget, {
 import ScatterChartWidget, {
   gridDefaults as scatterChartGridDefaults,
 } from "../../components/dashboard/widgets/metrics/ScatterChartWidget.vue";
+import HeatmapChartWidget, {
+  gridDefaults as heatmapChartGridDefaults,
+} from "../../components/dashboard/widgets/metrics/HeatmapChartWidget.vue";
+import AudioPlayerWidget, {
+  gridDefaults as audioPlayerGridDefaults,
+} from "../../components/dashboard/widgets/media/AudioPlayerWidget.vue";
 import PropertyGridWidget from "../../components/dashboard/_internals/PropertyGridWidget.vue";
 import WidgetsSelectorWidget from "../../components/dashboard/_internals/WidgetsSelectorWidget.vue";
 import SaveTileLayoutOffcanvas from "../../components/dashboard/_internals/SaveTileLayoutOffcanvas.vue";
@@ -52,6 +58,8 @@ const widgetComponents = {
   LineChartWidget,
   PolarAreaChartWidget,
   ScatterChartWidget,
+  HeatmapChartWidget,
+  AudioPlayerWidget,
 };
 const gridDefaultsByType = {
   IconValueWidget: iconValueGridDefaults,
@@ -64,6 +72,8 @@ const gridDefaultsByType = {
   LineChartWidget: lineChartGridDefaults,
   PolarAreaChartWidget: polarAreaChartGridDefaults,
   ScatterChartWidget: scatterChartGridDefaults,
+  HeatmapChartWidget: heatmapChartGridDefaults,
+  AudioPlayerWidget: audioPlayerGridDefaults,
 };
 const gridOptions = {
   column: 3,
@@ -141,7 +151,11 @@ async function loadLayoutById(id) {
   layoutLoadError.value = null;
   currentLayoutMeta.value = null;
   try {
-    const res = await fetch(`/config/${id}.json`);
+    // Prefer new location (public/config/tilelayouts). Fallback to legacy (public/config root).
+    let res = await fetch(`/config/tilelayouts/${id}.json`);
+    if (!res.ok) {
+      res = await fetch(`/config/${id}.json`);
+    }
     if (!res.ok) throw new Error(`Layout not found: ${res.status}`);
     const data = await res.json();
     if (!data.layout) throw new Error("Invalid layout file");
@@ -240,7 +254,7 @@ async function handleSaveTileLayout(payload) {
     }
     if (res.ok) {
       closeSaveTileLayout();
-      alert(`Layout saved to config/${data.filename}`);
+      alert(`Layout saved to config/tilelayouts/${data.filename}`);
       return;
     }
     if (res.status === 404) {

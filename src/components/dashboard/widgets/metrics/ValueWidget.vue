@@ -18,31 +18,42 @@ export const PROP_SCHEMA = {
     default: "",
     control: "text",
     label: "Unique Name",
+    description: "Unique identifier for this widget (used for data binding and scripting)",
   },
-  label: { type: "string", default: "", control: "text", label: "Label" },
+  label: {
+    type: "string",
+    default: "",
+    control: "text",
+    label: "Label",
+    description: "Label text displayed above the value",
+  },
   description: {
     type: "string",
     default: "",
     control: "text",
     label: "Description",
+    description: "Optional description or notes for this widget",
   },
   labelFontColor: {
     type: "string",
     default: "#6c757d",
     control: "colorPure",
     label: "Font Color",
+    description: "Label text color",
   },
   labelFontFamily: {
     type: "string",
     default: "inherit",
     control: "font",
     label: "Font Family",
+    description: "Label font family",
   },
   labelFontSizePx: {
     type: "number",
     default: 14,
     control: "number",
     label: "Font Size (px)",
+    description: "Label font size in pixels",
     min: 8,
     max: 72,
     step: 1,
@@ -53,6 +64,7 @@ export const PROP_SCHEMA = {
     control: "fontStyle",
     options: ["B", "U", "I", "S"],
     label: "Font Style",
+    description: "Label font style (Bold, Underline, Italic, Strikethrough)",
   },
   labelHorizontalAlignment: {
     type: "string",
@@ -60,6 +72,7 @@ export const PROP_SCHEMA = {
     control: "select",
     options: ["Start", "Center", "End"],
     label: "Horizontal Alignment",
+    description: "Label horizontal alignment",
   },
   labelVerticalAlignment: {
     type: "string",
@@ -67,64 +80,80 @@ export const PROP_SCHEMA = {
     control: "select",
     options: ["Start", "Center", "End"],
     label: "Vertical Alignment",
+    description: "Label vertical alignment",
   },
   backgroundColor: {
     type: "string",
     default: "",
     control: "colorBoth",
     label: "Background Color",
+    description: "Background color or gradient for the widget card",
   },
   borderLeftColor: {
     type: "string",
     default: "orange",
     control: "colorPure",
     label: "Border Left",
+    description: "Left border color",
   },
   borderTopColor: {
     type: "string",
     default: "",
     control: "colorPure",
     label: "Border Top",
+    description: "Top border color",
   },
   borderRightColor: {
     type: "string",
     default: "",
     control: "colorPure",
     label: "Border Right",
+    description: "Right border color",
   },
   borderBottomColor: {
     type: "string",
     default: "",
     control: "colorPure",
     label: "Border Bottom",
+    description: "Bottom border color",
   },
   cardPaddingAll: {
     type: "number",
     default: 0.5,
     control: "number",
     label: "Padding All (rem)",
+    description: "Uniform padding around the widget content in rem units",
     min: 0.1,
     max: 5,
     step: 0.1,
   },
-  value: { type: "string", default: "--", control: "text", label: "Value" },
+  value: {
+    type: "string",
+    default: "--",
+    control: "text",
+    label: "Value",
+    description: "The displayed value",
+  },
   valueFontColor: {
     type: "string",
     default: "inherit",
     control: "colorPure",
     label: "Font Color",
+    description: "Value text color",
   },
   valueFontFamily: {
     type: "string",
     default: "inherit",
     control: "font",
     label: "Font Family",
+    description: "Value font family",
   },
   valueFontSizePx: {
     type: "number",
     default: 24,
     control: "number",
     label: "Font Size (px)",
+    description: "Value font size in pixels",
     min: 12,
     max: 72,
     step: 1,
@@ -135,6 +164,7 @@ export const PROP_SCHEMA = {
     control: "fontStyle",
     options: ["B", "U", "I", "S"],
     label: "Font Style",
+    description: "Value font style (Bold, Underline, Italic, Strikethrough)",
   },
   valueHorizontalAlignment: {
     type: "string",
@@ -142,6 +172,7 @@ export const PROP_SCHEMA = {
     control: "select",
     options: ["Start", "Center", "End"],
     label: "Horizontal Alignment",
+    description: "Value horizontal alignment",
   },
   valueVerticalAlignment: {
     type: "string",
@@ -149,6 +180,7 @@ export const PROP_SCHEMA = {
     control: "select",
     options: ["Start", "Center", "End"],
     label: "Vertical Alignment",
+    description: "Value vertical alignment",
   },
 };
 
@@ -282,6 +314,7 @@ export function buildPropertySchema(props = {}) {
             min: schema.min,
             max: schema.max,
             step: schema.step,
+            description: schema.description ?? null,
             children: [],
           };
         }),
@@ -300,6 +333,7 @@ import { computed, inject } from "vue";
 const props = defineProps({
   /** Optional; overrides inject. Receives (propertySchema, opts?) where opts.update = (key, value) => void */
   openPropertyEditor: { type: Function, default: null },
+  removeWidget: { type: Function, default: null },
   editMode: { type: Boolean, default: false },
   uniqueName: { type: String, default: "" },
   identifier: { type: String, default: "" },
@@ -463,14 +497,37 @@ function onClick() {
 
 <template>
   <div
-    class="card h-100"
+    class="card h-100 position-relative"
     :class="{ 'edit-mode': editMode }"
     :style="{ ...cardStyle, ...selfAlignmentStyle }"
     role="button"
     tabindex="0"
-    @dblclick.stop="onClick"
-    @keydown.enter.prevent="onClick"
+    @dblclick.stop
   >
+    <div
+      v-if="editMode"
+      class="widget-actions btn-group btn-group-sm"
+      role="group"
+      @click.stop
+    >
+      <button
+        v-if="removeWidget"
+        type="button"
+        class="btn btn-outline-danger btn-sm"
+        title="Delete"
+        @click.stop="removeWidget"
+      >
+        <i class="fa-solid fa-trash"></i>
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        title="Settings"
+        @click.stop="onClick"
+      >
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
     <div :class="bodyClasses" :style="contentAlignmentStyle">
       <div class="d-flex flex-column min-w-0 flex-grow-1 w-100">
         <p
@@ -499,5 +556,23 @@ function onClick() {
 }
 .card[role="button"].edit-mode {
   cursor: pointer;
+}
+
+.widget-actions {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.card.edit-mode:hover .widget-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.widget-actions .btn {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.7rem;
 }
 </style>

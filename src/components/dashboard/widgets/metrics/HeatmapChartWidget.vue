@@ -4,13 +4,13 @@ export const gridDefaults = { w: 2, h: 2, minW: 1, minH: 2 };
 
 /** Metadata for the widget selector (friendly name, description, icon, group). */
 export const widgetMeta = {
-  friendlyName: "Polar Area Chart",
-  description: "Displays a polar area chart for categorical metrics.",
-  icon: "fa-solid fa-chart-pie",
+  friendlyName: "Heatmap Chart",
+  description: "Displays a calendar heatmap for date/count data.",
+  icon: "fa-solid fa-fire",
   group: "Charts",
 };
 
-/** Full property metadata for PolarAreaChartWidget. */
+/** Full property metadata for HeatmapChartWidget. */
 export const PROP_SCHEMA = {
   uniqueName: {
     type: "string",
@@ -26,11 +26,9 @@ export const PROP_SCHEMA = {
     label: "Description",
     description: "Optional description or notes for the widget.",
   },
-
-  // Card title (shown above chart)
   title: {
     type: "string",
-    default: "Polar Area Chart",
+    default: "Heatmap Chart",
     control: "text",
     label: "Title",
     description: "Text label displayed above the chart.",
@@ -83,46 +81,60 @@ export const PROP_SCHEMA = {
     description: "Horizontal alignment of the title (left, center, right).",
   },
 
-  // Data
-  labels: {
-    type: "string",
-    default: "A,B,C",
-    control: "text",
-    label: "Labels (Comma Separated)",
-    description: "Labels for each segment, comma-separated.",
-  },
+  // Data: "date:count;date:count;..." e.g. "2024-01-15:5;2024-01-16:3"
   values: {
     type: "string",
-    default: "11,16,7",
+    default: "2024-01-15:5;2024-01-16:3;2024-01-20:10;2024-02-01:2",
     control: "text",
-    label: "Values (Comma Separated)",
-    description: "Numeric values for each segment (determines segment size), comma-separated.",
+    label: "Data (date:count; date:count; ...)",
+    description: "Data entries as date:count pairs separated by semicolons. Example: 2024-01-15:5;2024-01-16:3",
   },
-  colors: {
+  endDate: {
     type: "string",
-    default: "#0d6efd,#6c757d,#198754",
+    default: "",
     control: "text",
-    label: "Segment Colors (Comma Separated)",
-    description: "Fill colors for each segment, comma-separated. Order matches labels/values.",
+    label: "End Date (YYYY-MM-DD, empty = today)",
+    description: "End date for the heatmap range in YYYY-MM-DD format. Leave empty to use today.",
   },
 
-  // Appearance / behaviour
-  segmentBorderWidth: {
-    type: "number",
-    default: 1,
-    control: "number",
-    label: "Segment Border Width (px)",
-    min: 0,
-    max: 10,
-    step: 1,
-    description: "Width of the border between polar area segments in pixels.",
+  // Appearance
+  tooltipsEnabled: {
+    type: "boolean",
+    default: true,
+    control: "switch",
+    label: "Show Tooltips",
+    description: "Whether to show tooltips on hover.",
   },
-  segmentBorderColor: {
+  tooltipUnit: {
     type: "string",
-    default: "#fff",
-    control: "colorPure",
-    label: "Segment Border Color",
-    description: "Color of the border between polar area segments.",
+    default: "contributions",
+    control: "text",
+    label: "Tooltip Unit",
+    description: "Unit label shown in tooltips (e.g. contributions, events).",
+  },
+  vertical: {
+    type: "boolean",
+    default: false,
+    control: "switch",
+    label: "Vertical Mode",
+    description: "Whether to display the heatmap in vertical orientation.",
+  },
+  round: {
+    type: "number",
+    default: 0,
+    control: "number",
+    label: "Round Corners (0-5)",
+    min: 0,
+    max: 5,
+    step: 1,
+    description: "Corner roundness of each heatmap cell (0 = square, 5 = most rounded).",
+  },
+  colorRange: {
+    type: "string",
+    default: "#ebedf0,#9be9a8,#40c463,#30a14e,#216e39",
+    control: "text",
+    label: "Color Range (comma-separated)",
+    description: "Gradient colors for the heatmap from low to high intensity, comma-separated.",
   },
   fillCell: {
     type: "boolean",
@@ -145,55 +157,6 @@ export const PROP_SCHEMA = {
     control: "switch",
     label: "Maintain Aspect Ratio",
     description: "Whether the chart maintains its aspect ratio when resized.",
-  },
-
-  // Legend
-  legendDisplay: {
-    type: "boolean",
-    default: true,
-    control: "switch",
-    label: "Show Legend",
-    description: "Whether to show the legend.",
-  },
-  legendPosition: {
-    type: "string",
-    default: "top",
-    control: "select",
-    options: ["top", "right", "bottom", "left"],
-    label: "Position",
-    description: "Position of the legend (top, right, bottom, left).",
-  },
-  legendFontColor: {
-    type: "string",
-    default: "#6c757d",
-    control: "colorPure",
-    label: "Font color",
-    description: "Text color for the legend.",
-  },
-  legendFontFamily: {
-    type: "string",
-    default: "inherit",
-    control: "font",
-    label: "Font family",
-    description: "Font family for the legend.",
-  },
-  legendFontSize: {
-    type: "number",
-    default: 12,
-    control: "number",
-    label: "Font Size (px)",
-    min: 8,
-    max: 32,
-    step: 1,
-    description: "Font size for the legend in pixels.",
-  },
-
-  tooltipsEnabled: {
-    type: "boolean",
-    default: true,
-    control: "switch",
-    label: "Show Tooltips",
-    description: "Whether to show tooltips on hover.",
   },
 
   // Card visual + layout
@@ -255,21 +218,16 @@ export const CONFIGURABLE_PROPS_BY_GROUP = {
     "titleVerticalAlignment",
     "titleHorizontalAlignment",
   ],
-  data: ["labels", "values", "colors"],
-  legend: [
-    "legendDisplay",
-    "legendPosition",
-    "legendFontColor",
-    "legendFontFamily",
-    "legendFontSize",
-  ],
+  data: ["values", "endDate"],
   chart: [
-    "segmentBorderWidth",
-    "segmentBorderColor",
+    "tooltipsEnabled",
+    "tooltipUnit",
+    "vertical",
+    "round",
+    "colorRange",
     "fillCell",
     "verticalAlignment",
     "maintainAspectRatio",
-    "tooltipsEnabled",
   ],
   card: [
     "backgroundColor",
@@ -283,6 +241,7 @@ export const CONFIGURABLE_PROPS_BY_GROUP = {
 
 /** Builds property schema for PropertyGridWidget from widget props. */
 export function buildPropertySchema(props = {}) {
+  const displayLabel = props.uniqueName || props.title || "Heatmap Chart";
   const children = Object.entries(CONFIGURABLE_PROPS_BY_GROUP).map(
     ([groupName, keys]) => ({
       label: groupName.charAt(0).toUpperCase() + groupName.slice(1),
@@ -314,7 +273,7 @@ export function buildPropertySchema(props = {}) {
   );
 
   return {
-    label: `Polar Area Chart Settings`,
+    label: `Heatmap Chart: ${displayLabel}`,
     children,
   };
 }
@@ -322,17 +281,8 @@ export function buildPropertySchema(props = {}) {
 
 <script setup>
 import { computed, inject } from "vue";
-import { PolarArea } from "vue-chartjs";
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  RadialLinearScale,
-} from "chart.js";
-
-ChartJS.register(Title, Tooltip, Legend, ArcElement, RadialLinearScale);
+import { CalendarHeatmap } from "vue3-calendar-heatmap";
+import "vue3-calendar-heatmap/dist/style.css";
 
 const props = defineProps({
   openPropertyEditor: { type: Function, default: null },
@@ -341,13 +291,10 @@ const props = defineProps({
   uniqueName: { type: String, default: "" },
   description: { type: String, default: "" },
 
-  title: { type: String, default: "Polar Area Chart" },
+  title: { type: String, default: "Heatmap Chart" },
   titleFontColor: { type: String, default: "#6c757d" },
   titleFontFamily: { type: String, default: "inherit" },
-  titleFontSize: {
-    type: [Number, String],
-    default: 14,
-  },
+  titleFontSize: { type: [Number, String], default: 14 },
   showTitle: { type: [Boolean, String], default: true },
   titleVerticalAlignment: {
     type: String,
@@ -360,6 +307,15 @@ const props = defineProps({
     validator: (v) => ["left", "center", "right"].includes(v),
   },
 
+  values: { type: String, default: "2024-01-15:5;2024-01-16:3;2024-01-20:10;2024-02-01:2" },
+  endDate: { type: String, default: "" },
+
+  tooltipsEnabled: { type: [Boolean, String], default: true },
+  tooltipUnit: { type: String, default: "contributions" },
+  vertical: { type: [Boolean, String], default: false },
+  round: { type: [Number, String], default: 0 },
+  colorRange: { type: String, default: "#ebedf0,#9be9a8,#40c463,#30a14e,#216e39" },
+
   backgroundColor: { type: String, default: "" },
   borderLeftColor: { type: String, default: "orange" },
   borderTopColor: { type: String, default: "" },
@@ -367,90 +323,13 @@ const props = defineProps({
   borderBottomColor: { type: String, default: "" },
   cardPaddingAll: { type: [Number, String], default: 0.5 },
 
-  labels: { type: String, default: "A,B,C" },
-  values: { type: String, default: "11,16,7" },
-  colors: { type: String, default: "#0d6efd,#6c757d,#198754" },
-
-  segmentBorderWidth: { type: [Number, String], default: 1 },
-  segmentBorderColor: { type: String, default: "#fff" },
   fillCell: { type: [Boolean, String], default: true },
-  verticalAlignment: { type: String, default: "center" },
+  verticalAlignment: {
+    type: String,
+    default: "center",
+    validator: (v) => ["top", "center", "bottom"].includes(v),
+  },
   maintainAspectRatio: { type: [Boolean, String], default: false },
-
-  legendDisplay: { type: [Boolean, String], default: true },
-  legendPosition: { type: String, default: "top" },
-  legendFontColor: { type: String, default: "#6c757d" },
-  legendFontFamily: { type: String, default: "inherit" },
-  legendFontSize: { type: [Number, String], default: 12 },
-  tooltipsEnabled: { type: [Boolean, String], default: true },
-});
-
-const cardStyle = computed(() => {
-  const style = {
-    maxHeight: "100%",
-    height: "100%",
-    overflow: "hidden",
-    minHeight: 0,
-  };
-
-  if (props.backgroundColor) {
-    const bg = props.backgroundColor.trim();
-    if (/^linear-gradient\(|^radial-gradient\(/i.test(bg))
-      style.background = bg;
-    else style.backgroundColor = bg;
-  }
-
-  const width = "3px solid ";
-  if (props.borderLeftColor) style.borderLeft = width + props.borderLeftColor;
-  if (props.borderTopColor) style.borderTop = width + props.borderTopColor;
-  if (props.borderRightColor)
-    style.borderRight = width + props.borderRightColor;
-  if (props.borderBottomColor)
-    style.borderBottom = width + props.borderBottomColor;
-
-  return style;
-});
-
-const titleClass = computed(() => []);
-const titleStyle = computed(() => {
-  const s = {};
-  if (props.titleFontFamily) s.fontFamily = props.titleFontFamily;
-  if (props.titleFontColor) s.color = props.titleFontColor;
-
-  s.fontSize = `${asNumber(props.titleFontSize, 14)}px`;
-
-  if (props.titleHorizontalAlignment === "left") s.textAlign = "left";
-  else if (props.titleHorizontalAlignment === "right") s.textAlign = "right";
-  else s.textAlign = "center";
-
-  s.width = "100%";
-
-  return s;
-});
-
-const selfAlignmentStyle = computed(() => ({
-  alignSelf: "center",
-  marginLeft: "auto",
-  marginRight: "auto",
-  width: "100%",
-  minWidth: 0,
-  maxWidth: "100%",
-}));
-
-const contentAlignmentStyle = computed(() => {
-  const vertical = props.verticalAlignment || "center";
-  let justifyContent = "center";
-  if (vertical === "top") justifyContent = "flex-start";
-  else if (vertical === "bottom") justifyContent = "flex-end";
-
-  return {
-    justifyContent,
-    alignItems: "center",
-    width: "100%",
-    height: "100%",
-    minHeight: 0,
-    padding: `${Number(props.cardPaddingAll) || 0}rem`,
-  };
 });
 
 const asBool = (v, fallback = false) => {
@@ -469,34 +348,6 @@ const asNumber = (v, fallback = 0) => {
   return Number.isNaN(n) ? fallback : n;
 };
 
-const parsedLabels = computed(() =>
-  String(props.labels || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean),
-);
-
-const parsedValues = computed(() =>
-  String(props.values || "")
-    .split(",")
-    .map((s) => Number(s.trim()))
-    .filter((n) => !Number.isNaN(n)),
-);
-
-const parsedColors = computed(() =>
-  String(props.colors || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean),
-);
-
-const showTitleBool = computed(() => asBool(props.showTitle, true));
-const maintainAspectRatioValue = computed(() =>
-  asBool(props.maintainAspectRatio, false),
-);
-const fillCellBool = computed(() => asBool(props.fillCell, false));
-const legendFontSizeKey = computed(() => asNumber(props.legendFontSize, 12));
-
 const injectedOpenPropertyEditor = inject("openPropertyEditor", null);
 const openPropertyEditor = computed(
   () => props.openPropertyEditor ?? injectedOpenPropertyEditor,
@@ -511,59 +362,101 @@ function onClick() {
   if (fn) fn(buildPropertySchemaFromProps());
 }
 
-const chartData = computed(() => {
-  const labels = parsedLabels.value;
-  const values = parsedValues.value;
-  if (!labels.length || !values.length) {
-    return { labels: [], datasets: [] };
-  }
-  const dataValues =
-    values.length === labels.length
-      ? values
-      : labels.map((_, i) => values[i] ?? 0);
-  const colors = parsedColors.value;
-  const bgColors = dataValues.map((_, i) => colors[i] || "#0d6efd");
+const showTitleBool = computed(() => asBool(props.showTitle, true));
+const fillCellBool = computed(() => asBool(props.fillCell, true));
+const maintainAspectRatioValue = computed(() =>
+  asBool(props.maintainAspectRatio, false),
+);
 
-  return {
-    labels,
-    datasets: [
-      {
-        data: dataValues,
-        backgroundColor: bgColors,
-        borderWidth: asNumber(props.segmentBorderWidth, 1),
-        borderColor: props.segmentBorderColor || "#fff",
-      },
-    ],
-  };
+const parsedValues = computed(() => {
+  const str = String(props.values || "").trim();
+  if (!str) return [];
+  const result = [];
+  for (const part of str.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const colon = trimmed.indexOf(":");
+    if (colon < 0) continue;
+    const dateStr = trimmed.slice(0, colon).trim();
+    const countStr = trimmed.slice(colon + 1).trim();
+    const count = Number(countStr);
+    if (!dateStr || !Number.isFinite(count)) continue;
+    result.push({ date: dateStr, count });
+  }
+  return result;
 });
 
-const chartOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: maintainAspectRatioValue.value,
-  maintainAspectRatio: asBool(props.maintainAspectRatio, false),
-  scales: {
-    r: {
-      beginAtZero: true,
-    },
-  },
-  plugins: {
-    legend: {
-      display: asBool(props.legendDisplay, true),
-      position: props.legendPosition || "top",
-      labels: {
-        color: props.legendFontColor || undefined,
-        font: {
-          size: asNumber(props.legendFontSize, 12),
-          family: props.legendFontFamily || undefined,
-        },
-      },
-    },
-    title: {
-      display: false,
-    },
-    tooltip: { enabled: asBool(props.tooltipsEnabled, true) },
-  },
+const heatmapEndDate = computed(() => {
+  const end = String(props.endDate || "").trim();
+  if (end) return end;
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+});
+
+const heatmapColorRange = computed(() => {
+  const str = String(props.colorRange || "").trim();
+  if (!str) return ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"];
+  return str.split(",").map((s) => s.trim()).filter(Boolean);
+});
+
+const cardStyle = computed(() => {
+  const style = {
+    maxHeight: "100%",
+    height: "100%",
+    overflow: "hidden",
+    minHeight: 0,
+  };
+  if (props.backgroundColor) {
+    const bg = props.backgroundColor.trim();
+    if (/^linear-gradient\(|^radial-gradient\(/i.test(bg))
+      style.background = bg;
+    else style.backgroundColor = bg;
+  }
+  const width = "3px solid ";
+  if (props.borderLeftColor) style.borderLeft = width + props.borderLeftColor;
+  if (props.borderTopColor) style.borderTop = width + props.borderTopColor;
+  if (props.borderRightColor)
+    style.borderRight = width + props.borderRightColor;
+  if (props.borderBottomColor)
+    style.borderBottom = width + props.borderBottomColor;
+  return style;
+});
+
+const titleStyle = computed(() => {
+  const s = {};
+  if (props.titleFontFamily) s.fontFamily = props.titleFontFamily;
+  if (props.titleFontColor) s.color = props.titleFontColor;
+  s.fontSize = `${asNumber(props.titleFontSize, 14)}px`;
+  if (props.titleHorizontalAlignment === "left") s.textAlign = "left";
+  else if (props.titleHorizontalAlignment === "right") s.textAlign = "right";
+  else s.textAlign = "center";
+  s.width = "100%";
+  return s;
+});
+
+const selfAlignmentStyle = computed(() => ({
+  alignSelf: "center",
+  marginLeft: "auto",
+  marginRight: "auto",
+  width: "100%",
+  minWidth: 0,
+  maxWidth: "100%",
 }));
+
+const contentAlignmentStyle = computed(() => {
+  const vertical = props.verticalAlignment || "center";
+  let justifyContent = "center";
+  if (vertical === "top") justifyContent = "flex-start";
+  else if (vertical === "bottom") justifyContent = "flex-end";
+  return {
+    justifyContent,
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+    minHeight: 0,
+    padding: `${Number(props.cardPaddingAll) || 0.5}rem`,
+  };
+});
 </script>
 
 <template>
@@ -603,7 +496,6 @@ const chartOptions = computed(() => ({
       <div
         v-if="showTitleBool && title && titleVerticalAlignment === 'top'"
         class="mb-2"
-        :class="titleClass"
         :style="titleStyle"
       >
         {{ title }}
@@ -614,17 +506,20 @@ const chartOptions = computed(() => ({
         :class="{ 'flex-grow-1': fillCellBool }"
         :style="selfAlignmentStyle"
       >
-        <PolarArea
-          :data="chartData"
-          :options="chartOptions"
-          :key="`${maintainAspectRatioValue ? 'ma-1' : 'ma-0'}-lfs-${legendFontSizeKey}`"
+        <CalendarHeatmap
+          :values="parsedValues"
+          :end-date="heatmapEndDate"
+          :range-color="heatmapColorRange"
+          :tooltip="asBool(tooltipsEnabled, true)"
+          :tooltip-unit="tooltipUnit"
+          :vertical="asBool(vertical, false)"
+          :round="asNumber(round, 0)"
         />
       </div>
 
       <div
         v-if="showTitleBool && title && titleVerticalAlignment === 'bottom'"
         class="mt-2"
-        :class="titleClass"
         :style="titleStyle"
       >
         {{ title }}

@@ -10,6 +10,8 @@ import { widgetMeta as doughnutChartWidgetMeta } from "../metrics/DoughnutChartW
 import { widgetMeta as lineChartWidgetMeta } from "../metrics/LineChartWidget.vue";
 import { widgetMeta as polarAreaChartWidgetMeta } from "../metrics/PolarAreaChartWidget.vue";
 import { widgetMeta as scatterChartWidgetMeta } from "../metrics/ScatterChartWidget.vue";
+import { widgetMeta as heatmapChartWidgetMeta } from "../metrics/HeatmapChartWidget.vue";
+import { widgetMeta as audioPlayerWidgetMeta } from "../media/AudioPlayerWidget.vue";
 import { widgetMeta as gridLayoutWidgetMeta } from "./GridLayoutWidget.vue";
 import { generateWidgetIdentifier } from "../../_internals/widgetIdentifierCounter.js";
 import {
@@ -42,6 +44,8 @@ const WIDGET_REGISTRY = [
   { type: "LineChartWidget", ...lineChartWidgetMeta },
   { type: "PolarAreaChartWidget", ...polarAreaChartWidgetMeta },
   { type: "ScatterChartWidget", ...scatterChartWidgetMeta },
+  { type: "HeatmapChartWidget", ...heatmapChartWidgetMeta },
+  { type: "AudioPlayerWidget", ...audioPlayerWidgetMeta },
 ];
 
 /** Widgets grouped by meta.group for the accordion (array of { groupName, widgets }). */
@@ -93,6 +97,19 @@ const resolvedContentWidgetComponents = computed(() =>
     ? props.contentWidgetComponents
     : props.widgetComponents,
 );
+
+/** Remove widget from a cell (clears content). */
+function removeWidgetFromCell(rowIndex, colIndex) {
+  const newRows = localModel.value.rows.map((r, i) => {
+    if (i !== rowIndex) return r;
+    const newColumns = (r.columns || []).map((c, j) => {
+      if (j !== colIndex) return c;
+      return { ...c, content: null };
+    });
+    return { ...r, columns: newColumns };
+  });
+  localModel.value = { ...localModel.value, rows: newRows };
+}
 
 /** Update widget property in a cell. */
 function updateWidgetProperty(rowIndex, colIndex, key, value) {
@@ -227,6 +244,7 @@ function getWidgetProps(col, row, rowIndex, colIndex) {
   const baseProps = {
     ...cellProps,
     editMode: editMode.value,
+    removeWidget: () => removeWidgetFromCell(rowIndex, colIndex),
     // Pass wrapped openPropertyEditor to all widgets so they can open PropertyGridWidget with update callback
     ...(wrappedOpenPropertyEditor && {
       openPropertyEditor: wrappedOpenPropertyEditor,
@@ -1222,19 +1240,71 @@ function getDefaultPropsForWidgetType(type) {
     }
     case "PieChartWidget":
       return {
-        identifier: generateWidgetIdentifier("PieChartWidget"),
+        uniqueName: generateWidgetIdentifier("PieChartWidget"),
+        description: "",
         title: "Pie Chart",
-        labels: "A,B,C",
-        values: "40,30,30",
-        colors: "#0d6efd,#6c757d,#198754",
+        labels: "Open,In Progress,Closed",
+        values: "12,7,21",
+        colors: "#4e79a7,#f28e2b,#59a14f",
       };
     case "BarChartWidget":
       return {
-        identifier: generateWidgetIdentifier("BarChartWidget"),
+        uniqueName: generateWidgetIdentifier("BarChartWidget"),
+        description: "",
         title: "Bar Chart",
         labels: "Jan,Feb,Mar",
         values: "10,20,30",
-        color: "#0d6efd",
+        barColor: "#0d6efd",
+      };
+    case "LineChartWidget":
+      return {
+        uniqueName: generateWidgetIdentifier("LineChartWidget"),
+        description: "",
+        title: "Line Chart",
+        labels: "Jan,Feb,Mar",
+        values: "10,20,30",
+      };
+    case "PolarAreaChartWidget":
+      return {
+        uniqueName: generateWidgetIdentifier("PolarAreaChartWidget"),
+        description: "",
+        title: "Polar Area Chart",
+        labels: "A,B,C",
+        values: "11,16,7",
+        colors: "#0d6efd,#6c757d,#198754",
+      };
+    case "RadarChartWidget":
+      return {
+        uniqueName: generateWidgetIdentifier("RadarChartWidget"),
+        description: "",
+        title: "Radar Chart",
+        labels: "Speed,Power,Skill,Stamina,Agility",
+        values: "65,59,90,81,56",
+      };
+    case "ScatterChartWidget":
+      return {
+        uniqueName: generateWidgetIdentifier("ScatterChartWidget"),
+        description: "",
+        title: "Scatter Chart",
+        points: "0,10;1,20;2,15",
+      };
+    case "HeatmapChartWidget":
+      return {
+        uniqueName: generateWidgetIdentifier("HeatmapChartWidget"),
+        description: "",
+        title: "Heatmap Chart",
+        values: "2024-01-15:5;2024-01-16:3;2024-01-20:10;2024-02-01:2",
+        endDate: "",
+      };
+    case "AudioPlayerWidget":
+      return {
+        uniqueName: generateWidgetIdentifier("AudioPlayerWidget"),
+        description: "",
+        mediaUrl: "",
+        trackTitle: "Summer Vibes",
+        trackArtist: "John Smith",
+        albumArtUrl:
+          "https://images.unsplash.com/photo-1564419431636-fe02f0eff7aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
       };
     case "GridLayoutWidget":
       return {
@@ -1248,6 +1318,15 @@ function getDefaultPropsForWidgetType(type) {
         identifier: generateWidgetIdentifier("ValueWidget"),
         value: "--",
         label: "",
+      };
+    case "DoughnutChartWidget":
+      return {
+        uniqueName: generateWidgetIdentifier("DoughnutChartWidget"),
+        description: "",
+        title: "Doughnut Chart",
+        labels: "A,B,C",
+        values: "40,30,30",
+        colors: "#0d6efd,#6c757d,#198754",
       };
     case "TileLayoutWidget":
       return {

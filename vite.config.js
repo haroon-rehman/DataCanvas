@@ -11,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /** API middleware plugin — runs before Vite core so /api/* is handled before SPA fallback */
 function tileLayoutApiPlugin() {
   const configDir = path.join(__dirname, 'public', 'config')
+  const tileLayoutsDir = path.join(__dirname, 'public', 'config', 'tilelayouts')
   const dashboardsDir = path.join(__dirname, 'public', 'config', 'dashboards')
   const apiMiddleware = (req, res, next) => {
     const url = req.url?.split('?')[0] ?? ''
@@ -26,7 +27,9 @@ function tileLayoutApiPlugin() {
         return
       }
       try {
-        const filePath = path.join(configDir, `${id}.json`)
+        const newPath = path.join(tileLayoutsDir, `${id}.json`)
+        const legacyPath = path.join(configDir, `${id}.json`)
+        const filePath = fs.existsSync(newPath) ? newPath : legacyPath
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath)
           res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -73,28 +76,35 @@ function tileLayoutApiPlugin() {
         return
       }
       try {
-        const layouts = []
-        if (fs.existsSync(configDir)) {
-          const files = fs.readdirSync(configDir)
+        const layoutsById = new Map()
+        const readFromDir = (dir) => {
+          if (!fs.existsSync(dir)) return
+          const files = fs.readdirSync(dir)
           for (const file of files) {
             if (!file.endsWith('.json')) continue
-            const filePath = path.join(configDir, file)
+            const filePath = path.join(dir, file)
             const stat = fs.statSync(filePath)
             try {
               const content = JSON.parse(fs.readFileSync(filePath, 'utf8'))
               if (!content.layout) continue
               const id = content.id || file.replace(/\.json$/, '')
-              layouts.push({
-                id,
-                label: content.label || id,
-                description: content.description || '',
-                created: content.created || stat.birthtime?.toISOString?.() || null,
-                updated: content.updated || stat.mtime?.toISOString?.() || null,
-              })
+              // Prefer tilelayouts/ over legacy config root if both exist.
+              if (!layoutsById.has(id) || dir === tileLayoutsDir) {
+                layoutsById.set(id, {
+                  id,
+                  label: content.label || id,
+                  description: content.description || '',
+                  created: content.created || stat.birthtime?.toISOString?.() || null,
+                  updated: content.updated || stat.mtime?.toISOString?.() || null,
+                })
+              }
             } catch { /* skip */ }
           }
-          layouts.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''))
         }
+        readFromDir(configDir) // legacy support
+        readFromDir(tileLayoutsDir)
+        const layouts = Array.from(layoutsById.values())
+        layouts.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(layouts))
       } catch (e) {
@@ -121,15 +131,24 @@ function tileLayoutApiPlugin() {
             res.end(JSON.stringify({ error: 'id and layout are required' }))
             return
           }
-          if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true })
+          if (!fs.existsSync(tileLayoutsDir)) fs.mkdirSync(tileLayoutsDir, { recursive: true })
           const now = new Date().toISOString()
           let created = now
-          const filePath = path.join(configDir, `${id}.json`)
+          const filePath = path.join(tileLayoutsDir, `${id}.json`)
           if (fs.existsSync(filePath)) {
             try {
               const existing = JSON.parse(fs.readFileSync(filePath, 'utf8'))
               created = existing.created || created
             } catch { /* use defaults */ }
+          } else {
+            // Legacy support: preserve original created time if the layout exists in old location.
+            const legacyPath = path.join(configDir, `${id}.json`)
+            if (fs.existsSync(legacyPath)) {
+              try {
+                const existing = JSON.parse(fs.readFileSync(legacyPath, 'utf8'))
+                created = existing.created || created
+              } catch { /* use defaults */ }
+            }
           }
           const payload = { id, label: label || '', description: description || '', created, updated: now, layout }
           fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8')
@@ -249,7 +268,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'vue3-calendar-heatmap': path.join(__dirname, 'node_modules/vue3-calendar-heatmap'),
     },
   },
 })
