@@ -15,9 +15,25 @@ function tileLayoutApiPlugin() {
   const dashboardsDir = path.join(__dirname, 'public', 'config', 'dashboards')
   const apiMiddleware = (req, res, next) => {
     const url = req.url?.split('?')[0] ?? ''
-    const isApi = ['/api/tile-layouts', '/api/save-tile-layout', '/api/dashboards', '/api/save-dashboard'].includes(url) ||
+    const isApi = ['/api/health', '/api/tile-layouts', '/api/save-tile-layout', '/api/dashboards', '/api/save-dashboard'].includes(url) ||
       (req.method === 'DELETE' && (url.startsWith('/api/tile-layouts/') || url.startsWith('/api/dashboards/')))
     if (!isApi) return next()
+
+    if (url === '/api/health') {
+      if (req.method !== 'GET') {
+        res.writeHead(405, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Method not allowed' }))
+        return
+      }
+      console.log('[DataCanvas] Health API accessed')
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        service: 'datacanvas',
+      }))
+      return
+    }
 
     if (req.method === 'DELETE' && url.startsWith('/api/tile-layouts/')) {
       const id = decodeURIComponent(url.replace(/^\/api\/tile-layouts\//, ''))
@@ -261,6 +277,9 @@ function tileLayoutApiPlugin() {
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: true, // Listen on all interfaces (localhost + machine IP)
+  },
   plugins: [
     tileLayoutApiPlugin(),
     vue(),
